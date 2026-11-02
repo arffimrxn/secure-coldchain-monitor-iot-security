@@ -1,0 +1,81 @@
+<mxfile host="app.diagrams.net" modified="2026-10-28T00:00:00.000Z" agent="Claude" version="24.0.0" type="device">
+  <diagram id="arch1" name="Target Architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Secure Cold-Chain Vaccine-Fridge Monitor — Target Architecture" style="text;html=1;align=center;fontSize=18;fontStyle=1;fontColor=#0F2D4A;" vertex="1" parent="1">
+          <mxGeometry x="260" y="10" width="680" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="2 ESP32 nodes → Raspberry Pi 4 edge gateway → backend server (Mobius + MySQL + monitoring) → dashboards" style="text;html=1;align=center;fontSize=11;fontColor=#5F6368;" vertex="1" parent="1">
+          <mxGeometry x="260" y="40" width="680" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lDev" value="DEVICE TIER" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#4285F4;" vertex="1" parent="1"><mxGeometry x="40" y="70" width="240" height="20" as="geometry" /></mxCell>
+        <mxCell id="lEdge" value="EDGE GATEWAY (Pi 4)" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#34A853;" vertex="1" parent="1"><mxGeometry x="320" y="70" width="240" height="20" as="geometry" /></mxCell>
+        <mxCell id="lBack" value="BACKEND SERVER" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#A142F4;" vertex="1" parent="1"><mxGeometry x="600" y="70" width="300" height="20" as="geometry" /></mxCell>
+        <mxCell id="lUser" value="USERS" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#F29900;" vertex="1" parent="1"><mxGeometry x="940" y="70" width="220" height="20" as="geometry" /></mxCell>
+
+        <mxCell id="n1" value="&lt;b&gt;Node 1 · sensor01 (fridge)&lt;/b&gt;&lt;br&gt;&lt;br&gt;ESP32 DevKit&lt;br&gt;· DS18B20 temp probe (in box)&lt;br&gt;· reed switch (lid = door)&lt;br&gt;· buzzer / LED (over-temp alarm)&lt;br&gt;&lt;i&gt;temp + door JSON /5 s · actuator&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#4285F4;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="95" width="240" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" value="&lt;b&gt;Node 2 · sensor02 (power)&lt;/b&gt;&lt;br&gt;&lt;br&gt;ESP32 DevKit&lt;br&gt;· AC220V opto detector (isolated)&lt;br&gt;· power-loss alert on cut&lt;br&gt;&lt;i&gt;power_state JSON /5 s&lt;/i&gt;&lt;br&gt;&lt;font color=&quot;#C0392B&quot;&gt;&lt;i&gt;on separate power (power bank)&lt;/i&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#4285F4;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="245" width="240" height="135" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pi" value="&lt;b&gt;Raspberry Pi 4&lt;/b&gt;&lt;br&gt;&lt;i&gt;edge security gateway (X.1361)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4EA;strokeColor=#34A853;strokeWidth=2;align=center;verticalAlign=top;spacingTop=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="95" width="240" height="285" as="geometry" />
+        </mxCell>
+        <mxCell id="mq" value="&lt;b&gt;Mosquitto broker&lt;/b&gt;&lt;br&gt;mTLS · per-topic ACL · MQTTS 8883" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#34A853;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="335" y="140" width="210" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="br" value="&lt;b&gt;bridge.py&lt;/b&gt;&lt;br&gt;validates each reading → posts to Mobius (HTTPS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#34A853;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="335" y="200" width="210" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="pinotes" value="· device authentication&lt;br&gt;· plausibility check&lt;br&gt;· host firewall&lt;br&gt;· device revocation (M11)&lt;br&gt;&lt;i&gt;&lt;font color=&quot;#1E7A3A&quot;&gt;lightweight: broker + bridge only&lt;/font&gt;&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="335" y="262" width="210" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="backend" value="&lt;b&gt;Backend Server&lt;/b&gt;&lt;br&gt;&lt;i&gt;platform + storage + monitoring&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E8FD;strokeColor=#A142F4;strokeWidth=2;align=center;verticalAlign=top;spacingTop=8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="95" width="300" height="285" as="geometry" />
+        </mxCell>
+        <mxCell id="mobius" value="&lt;b&gt;Mobius IN-CSE&lt;/b&gt;&lt;br&gt;oneM2M (Y.4500.3) · ACP / 4103 · TLS to CSE (M8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#A142F4;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="615" y="140" width="270" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql" value="&lt;b&gt;MySQL 8&lt;/b&gt;&lt;br&gt;store · retention · 90-day purge" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#A142F4;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="615" y="196" width="270" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="nodered" value="&lt;b&gt;Node-RED / Grafana&lt;/b&gt;&lt;br&gt;security monitoring · ≥2 layers · ≥3 alert rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDECEA;strokeColor=#E05545;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="615" y="246" width="270" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="backnotes" value="· Mobius + MySQL kept together (no remote DB)&lt;br&gt;· RBAC for dashboards (M6) · retention (M12)&lt;br&gt;&lt;i&gt;&lt;font color=&quot;#7B2FB5&quot;&gt;heavy services offloaded from the Pi&lt;/font&gt;&lt;/i&gt;" style="text;html=1;align=left;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="615" y="300" width="270" height="72" as="geometry" />
+        </mxCell>
+
+        <mxCell id="clinic" value="&lt;b&gt;Clinic staff dashboard&lt;/b&gt;&lt;br&gt;&lt;br&gt;· temp / door / power status&lt;br&gt;· over-temp &amp;amp; power-loss alerts&lt;br&gt;· role-based access (M6)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E5;strokeColor=#F29900;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="110" width="230" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="security" value="&lt;b&gt;Security monitoring dashboard&lt;/b&gt;&lt;br&gt;&lt;br&gt;· broker + CSE + device events&lt;br&gt;· attack alerts within 60 s&lt;br&gt;· incident playbook (M10/M11)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDECEA;strokeColor=#E05545;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="250" width="230" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="callout" value="&lt;b&gt;&lt;font color=&quot;#FFD27A&quot;&gt;Split cleanly: the Pi is the edge security gateway; the backend server is the oneM2M platform + storage + monitoring&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#E8EEF5&quot;&gt;Broker auth, mutual TLS and topic ACLs are enforced on the Pi; oneM2M ACPs and data-at-rest controls on the server. Each tier is a clear trust boundary.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F2D4A;strokeColor=none;align=left;verticalAlign=middle;spacingLeft=14;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="400" width="1130" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="map" value="&lt;b&gt;Lab 1 weaknesses → mandatory controls (M1–M12)&lt;/b&gt;&lt;br&gt;F1/F4 no auth → M1 X.509 identity · M3 broker ACLs · M7 oneM2M ACP   F2 plaintext → M2 mTLS device–broker · M8 TLS Pi→CSE&lt;br&gt;F3 injection → M1 identity + Pi plausibility check   F5 open ports → M5 harden Pi &amp;amp; server, firewall   F6 hardcoded keys → M1 secure key storage&lt;br&gt;privacy → M12 minimisation + retention   monitoring → M10 security dashboard   response → M11 incident playbook + device revocation" style="text;html=1;align=left;fontSize=10;fontColor=#202124;" vertex="1" parent="1">
+          <mxGeometry x="40" y="478" width="1130" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#5F6368;" edge="1" parent="1" source="n1" target="pi"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#5F6368;" edge="1" parent="1" source="n2" target="pi"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e1l" value="MQTTS 8883" style="text;html=1;fontSize=9;fontColor=#1A73E8;" vertex="1" parent="1"><mxGeometry x="283" y="215" width="80" height="16" as="geometry" /></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#5F6368;" edge="1" parent="1" source="pi" target="backend"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3l" value="HTTPS + cert (M8)" style="text;html=1;fontSize=9;fontColor=#7B2FB5;" vertex="1" parent="1"><mxGeometry x="562" y="200" width="100" height="16" as="geometry" /></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#5F6368;" edge="1" parent="1" source="backend" target="clinic"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#5F6368;" edge="1" parent="1" source="backend" target="security"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
