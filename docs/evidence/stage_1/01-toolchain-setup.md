@@ -46,9 +46,10 @@ that does not depend on anyone watching a dashboard.
 
 ## 📸 Evidence
 
-* \[x] `evidence/01-led-wiring.jpg`: top-down photo of the breadboard, pin labels readable
-* \[x] `evidence/01-led-blink.gif` (or `.jpg`): the LED lit
+
 * \[x] `evidence/01-serial-led.png`: Serial Monitor showing `LED ON` / `LED OFF`
+* \[x] `evidence/02-led-wiring.jpg`: top-down photo of the breadboard, pin labels readable
+* \[x] `evidence/03-led-blink.gif` : the LED lit
 
 !\[LED blinking](evidence/01-led-blink.gif)
 
