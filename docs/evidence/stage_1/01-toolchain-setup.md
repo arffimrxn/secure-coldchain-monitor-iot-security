@@ -30,9 +30,7 @@ the red security-breach LED on Node 1 (Stage 1).
 |3|Red LED|long leg (+) in e10|short leg (−) in e11|
 |4|Black F-M jumper|ESP32 GND|hole a11|
 
-!\[Stage 1 wiring diagram](evidence/01-led-wiring-diagram.png)
-
-!\[Stage 1 wiring photo](evidence/01-led-wiring.jpg)
+![Stage 1 wiring](02_stage1_led_wiring.jpg)
 
 **Why GPIO23:** it is not a strapping pin (0, 2, 5, 12, 15), not wired to the flash chip (6–11)
 and not input-only (34–39), so it is a safe output that does not affect boot.
@@ -46,14 +44,15 @@ that does not depend on anyone watching a dashboard.
 
 ## 📸 Evidence
 
+| # | File | Shows |
+|---|------|-------|
+| 1 | `01_serial_led.jpg` | Serial Monitor printing `LED ON` / `LED OFF` |
+| 2 | `02_stage1_led_wiring.jpg` | Stage 1 wiring on the breadboard |
+| 3 | `03_led_blink.gif` | The red LED blinking at 1 Hz |
 
-* \[x] `evidence/01-serial-led.png`: Serial Monitor showing `LED ON` / `LED OFF`
-* \[x] `evidence/02-led-wiring.jpg`: top-down photo of the breadboard, pin labels readable
-* \[x] `evidence/03-led-blink.gif` : the LED lit
+![LED blinking](03_led_blink.gif)
 
-!\[LED blinking](evidence/01-led-blink.gif)
-
-!\[Serial Monitor output](evidence/01-serial-led.png)
+![Serial Monitor output](01_serial_led.jpg)
 
 ## Problems \& fixes
 
