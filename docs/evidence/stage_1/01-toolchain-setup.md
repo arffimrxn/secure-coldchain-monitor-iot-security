@@ -68,5 +68,5 @@ on my board). Fix: always wire by the label printed on the board, never by posit
 * \[x] Stage 0: sketch compiles, uploads over the CH340 and prints to the Serial Monitor at 115200 baud
 * \[x] Stage 1: red LED on GPIO23 blinks at 1 Hz (1 s on, 1 s off), in step with `LED ON` / `LED OFF` on serial
 
-**Next:** Stage 2, the DS18B20 temperature probe on GPIO4 (`docs/02-node1-sensors.md`).
+**Next:** Stage 2, the DS18B20 temperature probe on GPIO4 (`../stage_2/02-ds18b20-temperature.md`).
 

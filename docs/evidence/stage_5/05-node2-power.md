@@ -29,7 +29,9 @@ Flashed the second board on its own, labelled both boards ("N1 fridge", "N2 powe
 never gets flashed, and recorded Node 2's identity (chip, flash size, factory MAC). The MAC will be
 tied to Node 2's certificate at Stage 9.
 
-![Node 2 smoke test](20_node2_smoke_test.png)
+![Node 2 smoke test](20_node2_smoke_test.PNG)
+
+![Boards labelled](21_boards_labelled.jpg)
 
 ---
 
@@ -103,21 +105,21 @@ needs the network, so it is tested from Stage 6 onward.
 
 | File | Shows |
 |------|-------|
-| `20_node2_smoke_test.png` | Node 2 identity and "alive" lines |
+| `20_node2_smoke_test.PNG` | Node 2 identity and "alive" lines |
 | `21_boards_labelled.jpg` | Both boards labelled |
 | `22_usb_lead.jpg` | The finished, labelled USB lead |
 | `23_stage5b_wiring.jpg` | The divider and jumpers on the mini breadboard |
 | `24_node2_setup.jpg` | Socket, charger, lead, breadboard, Node 2 and laptop |
-| `25_serial_power_on.png` | Start-up and steady power-on readings |
-| `26_serial_power_cut.png` | Power lost, off-timer, power restored |
-| `27_power_cut_timing.mp4` | Switch and screen together, proving the detection time ([watch](28_power_cut_timing.mp4)) |
-| `28_serial_signal_unplugged.png` | Negative test: a broken signal wire is reported as a cut |
+| `25_serial_power_on.PNG` | Start-up and steady power-on readings |
+| `26_serial_power_cut.PNG` | Power lost, off-timer, power restored |
+| `27_power_cut_timing.mp4` | Switch and screen together, proving the detection time ([watch](27_power_cut_timing.mp4)) |
+| `28_serial_signal_unplugged.PNG` | Negative test: a broken signal wire is reported as a cut |
 
-![Power on](25_serial_power_on.png)
+![Power on](25_serial_power_on.PNG)
 
-![Power cut and restore](26_serial_power_cut.png)
+![Power cut and restore](26_serial_power_cut.PNG)
 
-![Signal wire unplugged (negative test)](28_serial_signal_unplugged.png)
+![Signal wire unplugged (negative test)](28_serial_signal_unplugged.PNG)
 
 ---
 

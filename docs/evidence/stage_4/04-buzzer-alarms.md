@@ -35,7 +35,7 @@ My ESP32 has only two GND pins and both were already in use (LED and − rail), 
 GND from the − rail. An active buzzer draws roughly 15–25 mA at 3.3 V, within what one ESP32 pin
 can supply, so it needs no transistor.
 
-![Stage 4 wiring](12_stage4_wiring.jpg)
+![Stage 4 wiring](12_stage4_wiring.png)
 
 ![Node 1 complete](13_node1_complete.jpg)
 
@@ -79,14 +79,13 @@ screenshots.
 
 | File | Shows |
 |------|-------|
-| `12_stage4_wiring.jpg` | Buzzer and jumper positions |
+| `12_stage4_wiring.png` | Buzzer and jumper positions |
 | `13_node1_complete.jpg` | The finished Node 1 |
 | `14_serial_startup.png` | Start-up lines and the alarm limits |
 | `15_serial_door_alarm.png` | Door alarm and recovery |
 | `16_serial_temp_alarm.png` | Over-temperature countdown, alarm and recovery |
 | `17_serial_breach.png` | Breach taking priority, then `clear` |
 | `18_serial_no_false_alarm.png` | Negative test: no false alarms |
-| `19_alarm_patterns.mp4` | The three alarm sounds ([watch](19_alarm_patterns.mp4)) |
 
 ![Start-up](14_serial_startup.png)
 

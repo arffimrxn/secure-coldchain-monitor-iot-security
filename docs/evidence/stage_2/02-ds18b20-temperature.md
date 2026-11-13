@@ -65,18 +65,19 @@ a plausible-looking temperature. In later stages this becomes an alert to the ba
 |------|-------|
 | `01_stage2_wiring.jpg` | Wiring, with the pin and module labels readable |
 | `02_serial_room_temp.png` | Boot line "1 sensor(s) found" and steady room readings |
-| `03_serial_hand_temp.png` | Readings rising while the probe is held |
+| `03_serial_hand_temp.PNG` | Readings rising while the probe is held |
 | `04_serial_ice_pack.png` | Readings falling on the ice pack |
-| `05_serial_dat_unplugged.png` | Negative test: "Probe not found", then recovery |
+| `ice_pack_test.jpg` | The probe on the ice pack |
+| `05_serial_dat_unplugged.PNG` | Negative test: "Probe not found", then recovery |
 
 ![Room temperature](02_serial_room_temp.png)
 
-![Hand test](03_serial_hand_temp.png)
+![Hand test](03_serial_hand_temp.PNG)
 
 ![Ice pack test](04_serial_ice_pack.png)
 ![Ice pack](ice_pack_test.jpg)
 
-![DAT unplugged (negative test)](05_serial_dat_unplugged.png)
+![DAT unplugged (negative test)](05_serial_dat_unplugged.PNG)
 
 
 ## Problems & fixes

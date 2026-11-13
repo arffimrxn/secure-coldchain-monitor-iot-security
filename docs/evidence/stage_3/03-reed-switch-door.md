@@ -24,6 +24,8 @@ No new power wires from the ESP32: the Stage 2 3V3 and GND wires already feed th
 
 ![Stage 3 wiring](06_stage3_wiring.jpg)
 
+![Reed switch and magnet in position](11_reed_mount.jpg)
+
 **Why GPIO19:** general purpose, and not a strapping, flash or input-only pin.
 
 ## Firmware
@@ -57,18 +59,19 @@ must stay below __ mm when the lid is shut.
 | File | Shows |
 |------|-------|
 | `06_stage3_wiring.jpg` | Wiring, with the module and pin labels readable |
-| `07_serial_door_states.png` | Start-up lines, door opened, open timer, door closed |
-| `08_switching_distance.jpg` | Magnet beside a ruler at the switching point |
+| `07_serial_door_closed.png` | Door closed: magnet against the reed |
+| `08_serial_door_open.PNG` | Door opened: open timer counting, then closed again |
 | `09_serial_bounce.png` | Fast open/close giving one line per change |
-| `10_serial_do_unplugged.png` | Negative test: OPEN while DO is unplugged, then recovery |
+| `10_serial_do_unplugged.PNG` | Negative test: OPEN while DO is unplugged, then recovery |
+| `11_reed_mount.jpg` | Reed module and magnet in position |
 
-![Door states](07_serial_door_states.png)
+![Door closed](07_serial_door_closed.png)
 
-![Switching distance](08_switching_distance.jpg)
+![Door open](08_serial_door_open.PNG)
 
 ![Debounce](09_serial_bounce.png)
 
-![DO unplugged (negative test)](10_serial_do_unplugged.png)
+![DO unplugged (negative test)](10_serial_do_unplugged.PNG)
 
 ## Result
 
