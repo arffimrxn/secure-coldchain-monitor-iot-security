@@ -65,13 +65,15 @@ cp firmware/node1_fridge/secrets.h.example firmware/node1_fridge/secrets.h
 
 ## Build stages
 
-- [ ] 01 — Toolchain + blink (`docs/01-toolchain-setup.md`)
-- [ ] 02 — Node 1 sensors: DS18B20, reed, buzzer, security LED (`docs/02-node1-sensors.md`)
-- [ ] 03 — Node 2: AC power-loss detection (`docs/03-node2-power.md`)
-- [ ] 04 — MQTT baseline (insecure, measured) (`docs/04-mqtt-baseline.md`)
-- [ ] 05 — Gateway + Mobius oneM2M (`docs/05-gateway-mobius.md`)
-- [ ] 06 — Security hardening (mTLS, ACL, ACP, firewall) (`docs/06-security-hardening.md`)
-- [ ] 07 — Threat model + monitoring + incident response (`docs/07-threat-model.md`)
+- [x] Stages 0–1 — Toolchain + security LED (`docs/evidence/stage_1/01-toolchain-setup.md`)
+- [x] Stage 2 — DS18B20 temperature probe (`docs/evidence/stage_2/02-ds18b20-temperature.md`)
+- [x] Stage 3 — Reed switch door sensor (`docs/evidence/stage_3/03-reed-switch-door.md`)
+- [x] Stage 4 — Buzzer alarms, Node 1 complete (`docs/evidence/stage_4/04-buzzer-alarms.md`)
+- [x] Stage 5 — Node 2: 5 V power-loss detection (`docs/evidence/stage_5/05-node2-power.md`)
+- [ ] Stage 6 — Wi-Fi + MQTT baseline (insecure, measured)
+- [ ] Stages 7–8 — Gateway + Mobius oneM2M, dashboards and command path
+- [ ] Stages 9–11 — Security hardening (mTLS, ACL, signed updates, firewall, ACP, retention)
+- [ ] Stage 12 — Monitoring + incident response; threat model
 
 ## Standards referenced
 
