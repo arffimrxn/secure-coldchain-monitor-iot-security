@@ -47,9 +47,8 @@ No new power wires from the ESP32: the Stage 2 3V3 and GND wires already feed th
 |---|------|------|----------|--------|
 | 1 | Magnet against the reed, then away | Positive | CLOSED, then OPEN | ✅ module signal LED __ when the magnet is near |
 | 2 | Open and close | Positive | `>>> DOOR OPENED`, open timer counting, `>>> DOOR CLOSED (was open x s)` | ✅ |
-| 3 | Switching distance | Measurement | Switches within ~1 cm | ✅ switches to CLOSED at __ mm |
-| 4 | Fast open/close | Robustness | One line per change, no duplicates | ✅ debounce works |
-| 5 | Pull DO out of j18 | Negative | Reads OPEN (fail-safe) | ✅ OPEN while unplugged, CLOSED again after reconnecting |
+| 3 | Fast open/close | Robustness | One line per change, no duplicates | ✅ debounce works |
+| 4 | Pull DO out of j18 | Negative | Reads OPEN (fail-safe) | ✅ OPEN while unplugged, CLOSED again after reconnecting |
 
 The switching distance sets where the magnet goes on the lid: the gap between magnet and reed
 must stay below __ mm when the lid is shut.
