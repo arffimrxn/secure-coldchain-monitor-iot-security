@@ -69,7 +69,7 @@ screenshots.
 | # | Test | Type | Expected | Result |
 |---|------|------|----------|--------|
 | 1 | Press EN | Positive | 2 short beeps at start-up | ✅ |
-| 2 | Door open 15 s | Positive | `DOOR OPEN TOO LONG`, double chirp; stops when closed | ✅ alarm __ s after opening |
+| 2 | Door open 15 s | Positive | `DOOR OPEN TOO LONG`, double chirp; stops when closed | ✅ alarm 15 s after opening |
 | 3 | Probe warmed past the limit for 10 s | Positive | `OVER-TEMPERATURE`, slow beeps; clears after cooling | ✅ peak 28 °C |
 | 4 | `breach`, then `clear` | Positive | Fast beeps + LED solid; stops on `clear` | ✅ |
 | 5 | `breach` during a door alarm | Priority | Breach takes over; door alarm returns after `clear` | ✅ |
