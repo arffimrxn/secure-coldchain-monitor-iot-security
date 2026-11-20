@@ -1,5 +1,5 @@
 /*
- * Node 1 — Fridge monitor (ESP32-DevKitC) · STAGE 6 (Wi-Fi + Plaintext MQTT)
+ * Node 1 — Fridge monitor (ESP32-DevKitC) · STAGE 8 (Wi-Fi + MQTT + Remote CMD)
  * Secure Cold-Chain Vaccine-Fridge Monitor · IIB20804
  *
  *   GPIO23  red security LED      (Stage 1)
@@ -7,7 +7,8 @@
  *   GPIO19  reed switch, door     (Stage 3)
  *   GPIO18  active buzzer (bare)  (Stage 4)
  *
- * Local alarms keep working independently even if Wi-Fi or the broker is down.
+ * Stage 8: subscribes to campus/sensor01/cmd ("breach" / "clear" or JSON)
+ * to drive the same breach alarm flag remotely, while local alarms still work offline.
  */
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -108,6 +109,32 @@ void publishTelemetry(unsigned long now) {
   lastPublishAt = now;
 }
 
+void onMqttCmd(char* topic, byte* payload, unsigned int length) {
+  String msg;
+  msg.reserve(length + 1);
+  for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
+  msg.trim();
+  String lower = msg;
+  lower.toLowerCase();
+
+  Serial.printf(">>> MQTT CMD [%s]: %s\n", topic, msg.c_str());
+
+  if (lower == "breach") {
+    breach = true;
+  } else if (lower == "clear") {
+    breach = false;
+  } else if (msg.startsWith("{")) {
+    JsonDocument doc;
+    if (!deserializeJson(doc, msg)) {
+      const char* c = doc["cmd"] | "";
+      String cmdStr = String(c);
+      cmdStr.toLowerCase();
+      if (cmdStr == "breach" || doc["breach"] == true) breach = true;
+      else if (cmdStr == "clear" || (doc["breach"].is<bool>() && doc["breach"] == false)) breach = false;
+    }
+  }
+}
+
 void setAlarm(Alarm a, unsigned long now) {
   if (a == current) return;
   Serial.printf(">>> ALARM %s -> %s\n", ALARM_NAME[current], ALARM_NAME[a]);
@@ -161,6 +188,8 @@ void maintainNetwork(unsigned long now) {
     Serial.printf(">>> Connecting MQTT %s:%d as %s... ", MQTT_HOST, MQTT_PORT, DEVICE_ID);
     if (mqtt.connect(DEVICE_ID, TOPIC_TELEMETRY, 1, false, lwt)) {
       Serial.println("OK");
+      mqtt.subscribe(TOPIC_CMD);
+      Serial.printf(">>> Subscribed to %s\n", TOPIC_CMD);
       publishTelemetry(now);
     } else {
       Serial.printf("failed (rc=%d)\n", mqtt.state());
@@ -201,11 +230,13 @@ void setup() {
   lastWifiTryAt = millis();
 
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(onMqttCmd);
   mqtt.setKeepAlive(15);   // 15 s keepalive -> LWT triggers within ~23 s
 
-  Serial.printf("Node 1 - Stage 6: temp GPIO%d (%d found), door GPIO%d, buzzer GPIO%d\n",
+  Serial.printf("Node 1 - Stage 8: temp GPIO%d (%d found), door GPIO%d, buzzer GPIO%d\n",
                 TEMP_PIN, probe.getDeviceCount(), DOOR_PIN, BUZZER_PIN);
-  Serial.printf("MQTT target: %s:%d -> %s\n", MQTT_HOST, MQTT_PORT, TOPIC_TELEMETRY);
+  Serial.printf("MQTT target: %s:%d -> pub %s | sub %s\n",
+                MQTT_HOST, MQTT_PORT, TOPIC_TELEMETRY, TOPIC_CMD);
   for (int i = 0; i < 2; i++) { buzzer(true); delay(120); buzzer(false); delay(120); }
 }
 
