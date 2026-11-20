@@ -6,4 +6,4 @@ Full write-ups and verified evidence are documented in:
 
 ## Summary
 - **Stage 7:** Raspberry Pi 4 (`192.168.0.24`) runs [`gateway/bridge.py`](../gateway/bridge.py), forwarding MQTT telemetry from `sensor01` and `sensor02` to Mobius 3.0.1 (`192.168.0.12:7579`) with `201 / RSC 2001` responses. Baseline lack of oneM2M ACP (`X-M2M-Origin: Cfakehacker` returning `200 OK`) is recorded for Stage 11.
-- **Stage 8:** [`firmware/node1_fridge/node1_fridge.ino`](../firmware/node1_fridge/node1_fridge.ino) subscribes to `campus/sensor01/cmd` (`"breach"` / `"clear"`), and [`gateway/nodered_flow.json`](../gateway/nodered_flow.json) provides both the **Cold-Chain Monitor** and **Security Ops (SOC)** dashboards.
+- **Stage 8:** [`firmware/node1_fridge/node1_fridge.ino`](../firmware/node1_fridge/node1_fridge.ino) subscribes to `campus/sensor01/cmd` (`"breach"` / `"clear"`), and [`gateway/nodered_flow.json`](../gateway/nodered_flow.json) provides both the **Smart Fridge Monitor** and **Security Ops (SOC)** dashboards.
