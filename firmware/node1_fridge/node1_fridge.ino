@@ -1,5 +1,5 @@
 /*
- * Node 1 — Fridge monitor (ESP32-DevKitC) · STAGE 4 (Node 1 complete)
+ * Node 1 — Fridge monitor (ESP32-DevKitC) · STAGE 8 (Wi-Fi + MQTT + Remote CMD)
  * Secure Cold-Chain Vaccine-Fridge Monitor · IIB20804
  *
  *   GPIO23  red security LED      (Stage 1)
@@ -7,62 +7,70 @@
  *   GPIO19  reed switch, door     (Stage 3)
  *   GPIO18  active buzzer (bare)  (Stage 4)
  *
- * Alarms (SR-13): over-temperature held too long, door open too long, and a
- * security-breach pattern (triggered from the Serial Monitor for now, from the
- * backend on campus/sensor01/cmd at Stage 8).
- *
- * No secrets live in this file — they go in secrets.h (git-ignored) from the MQTT stage onward.
+ * Stage 8: subscribes to campus/sensor01/cmd ("breach" / "clear" or JSON)
+ * to drive the same breach alarm flag remotely, while local alarms still work offline.
  */
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <time.h>
+#include <math.h>
+#include "secrets.h"
 
 #define LED_PIN     23
 #define TEMP_PIN     4
 #define DOOR_PIN    19
 #define BUZZER_PIN  18
 
-#define DOOR_CLOSED_LEVEL LOW   // keep whatever worked in Stage 3
+#define DOOR_CLOSED_LEVEL LOW
+#define BUZZER_ON_LEVEL   HIGH
 
-// Bare active buzzer between pin 18 (+ leg) and GND (− leg): HIGH = sound.
-// It draws roughly 15–25 mA at 3.3 V, within what one ESP32 pin can supply.
-#define BUZZER_ON_LEVEL HIGH
-
-// 1 = short bench timings so the alarms can be tested in seconds
-// 0 = the real SR-13 values (over 8 °C for 10 min, door open 5 min)
+// 1 = short bench timings so alarms can be tested in seconds
+// 0 = real SR-13 values (over 8 °C for 10 min, door open 5 min)
 #define BENCH_TIMING 1
 #if BENCH_TIMING
-const float         TEMP_HIGH_C   = 28.0;               // warm the probe in your hand to pass this
-const unsigned long TEMP_ALARM_MS = 10UL * 1000;        // over the limit for 10 s
-const unsigned long DOOR_ALARM_MS = 15UL * 1000;        // door open for 15 s
+const float         TEMP_HIGH_C   = 28.0;
+const unsigned long TEMP_ALARM_MS = 10UL * 1000;
+const unsigned long DOOR_ALARM_MS = 15UL * 1000;
 #else
-const float         TEMP_HIGH_C   = 8.0;                // vaccines must stay at 2–8 °C
-const unsigned long TEMP_ALARM_MS = 10UL * 60 * 1000;   // over 8 °C for 10 min (SR-13)
-const unsigned long DOOR_ALARM_MS =  5UL * 60 * 1000;   // door open for 5 min (SR-13)
+const float         TEMP_HIGH_C   = 8.0;
+const unsigned long TEMP_ALARM_MS = 10UL * 60 * 1000;
+const unsigned long DOOR_ALARM_MS =  5UL * 60 * 1000;
 #endif
-const float TEMP_CLEAR_MARGIN = 0.5;   // must fall 0.5 °C below the limit before it clears
+const float TEMP_CLEAR_MARGIN = 0.5;
 
-const unsigned long TEMP_PERIOD_MS = 2000;   // one temperature reading every 2 s
-const unsigned long CONVERSION_MS  = 800;    // DS18B20 needs up to 750 ms per reading
-const unsigned long DEBOUNCE_MS    = 50;     // ignore reed contact bounce
+const unsigned long TEMP_PERIOD_MS     = 2000;
+const unsigned long CONVERSION_MS      = 800;
+const unsigned long DEBOUNCE_MS        = 50;
+const unsigned long PUBLISH_MS         = 5000;
+const unsigned long MQTT_RETRY_MS      = 5000;
+const unsigned long WIFI_RETRY_MS      = 15000;
 
-// Buzzer patterns: alternating on/off times in ms, repeated while the alarm lasts
 const uint16_t PAT_DOOR[]   = {150, 150, 150, 1550};   // double chirp every 2 s
 const uint16_t PAT_TEMP[]   = {1000, 1000};            // slow: 1 s on, 1 s off
 const uint16_t PAT_BREACH[] = {100, 100};              // fast and continuous
 
 enum Alarm { NONE, DOOR, TEMP, BREACH };
 const char* ALARM_NAME[] = {"NONE", "DOOR OPEN TOO LONG", "OVER-TEMPERATURE", "SECURITY BREACH"};
+const char* ALARM_JSON[] = {"NONE", "DOOR", "TEMP", "BREACH"};
 
 OneWire oneWire(TEMP_PIN);
 DallasTemperature probe(&oneWire);
+WiFiClient wifiClient;
+PubSubClient mqtt(wifiClient);
 
 // door
 bool doorOpen = false;
 int  lastRaw = -1;
 unsigned long rawChangedAt = 0, doorOpenedAt = 0;
+
 // temperature
 unsigned long tempRequestedAt = 0, overSince = 0;
 bool tempPending = false, overTemp = false;
+float lastTempC = DEVICE_DISCONNECTED_C;
+
 // alarms
 bool breach = false;
 Alarm current = NONE;
@@ -71,8 +79,60 @@ uint8_t patLen = 0, patStep = 0;
 unsigned long stepStartedAt = 0;
 String cmd;
 
+// network / telemetry
+unsigned long lastPublishAt = 0, lastMqttTryAt = 0, lastWifiTryAt = 0;
+uint32_t seq = 0;
+bool wifiWasConnected = false;
+
 void buzzer(bool on) {
   digitalWrite(BUZZER_PIN, on ? BUZZER_ON_LEVEL : !BUZZER_ON_LEVEL);
+}
+
+void publishTelemetry(unsigned long now) {
+  if (!mqtt.connected()) return;
+
+  JsonDocument doc;
+  doc["device"] = DEVICE_ID;
+  time_t ts = time(nullptr);
+  doc["ts"]  = (long)ts;
+  doc["seq"] = ++seq;
+  if (lastTempC != DEVICE_DISCONNECTED_C) {
+    doc["temp"] = roundf(lastTempC * 100.0f) / 100.0f;
+  }
+  doc["door"]        = doorOpen ? "open" : "closed";
+  doc["door_open_s"] = doorOpen ? (unsigned long)((now - doorOpenedAt) / 1000) : 0UL;
+  doc["alarm"]       = ALARM_JSON[current];
+
+  char buf[256];
+  size_t len = serializeJson(doc, buf, sizeof(buf));
+  mqtt.publish(TOPIC_TELEMETRY, buf, len);
+  lastPublishAt = now;
+}
+
+void onMqttCmd(char* topic, byte* payload, unsigned int length) {
+  String msg;
+  msg.reserve(length + 1);
+  for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
+  msg.trim();
+  String lower = msg;
+  lower.toLowerCase();
+
+  Serial.printf(">>> MQTT CMD [%s]: %s\n", topic, msg.c_str());
+
+  if (lower == "breach") {
+    breach = true;
+  } else if (lower == "clear") {
+    breach = false;
+  } else if (msg.startsWith("{")) {
+    JsonDocument doc;
+    if (!deserializeJson(doc, msg)) {
+      const char* c = doc["cmd"] | "";
+      String cmdStr = String(c);
+      cmdStr.toLowerCase();
+      if (cmdStr == "breach" || doc["breach"] == true) breach = true;
+      else if (cmdStr == "clear" || (doc["breach"].is<bool>() && doc["breach"] == false)) breach = false;
+    }
+  }
 }
 
 void setAlarm(Alarm a, unsigned long now) {
@@ -87,17 +147,56 @@ void setAlarm(Alarm a, unsigned long now) {
   }
   patStep = 0;
   stepStartedAt = now;
-  buzzer(pat != nullptr);   // step 0 of every pattern is "on"
+  buzzer(pat != nullptr);
+  publishTelemetry(now);   // immediate event message
 }
 
 void runBuzzer(unsigned long now) {
   if (!pat || now - stepStartedAt < pat[patStep]) return;
   patStep = (patStep + 1) % patLen;
   stepStartedAt = now;
-  buzzer(patStep % 2 == 0);   // even steps on, odd steps off
+  buzzer(patStep % 2 == 0);
 }
 
-// Test commands typed in the Serial Monitor (line ending: New Line)
+void maintainNetwork(unsigned long now) {
+  wl_status_t st = WiFi.status();
+  if (st == WL_CONNECTED) {
+    if (!wifiWasConnected) {
+      wifiWasConnected = true;
+      Serial.printf(">>> Wi-Fi connected, IP: %s\n", WiFi.localIP().toString().c_str());
+      configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+    }
+  } else {
+    wifiWasConnected = false;
+    if (now - lastWifiTryAt >= WIFI_RETRY_MS) {
+      lastWifiTryAt = now;
+      Serial.println(">>> Wi-Fi reconnecting...");
+      WiFi.disconnect();
+      WiFi.begin(WIFI_SSID, WIFI_PASS);
+    }
+    return;
+  }
+
+  if (mqtt.connected()) {
+    mqtt.loop();
+    return;
+  }
+
+  if (now - lastMqttTryAt >= MQTT_RETRY_MS) {
+    lastMqttTryAt = now;
+    const char* lwt = "{\"device\":\"" DEVICE_ID "\",\"status\":\"offline\"}";
+    Serial.printf(">>> Connecting MQTT %s:%d as %s... ", MQTT_HOST, MQTT_PORT, DEVICE_ID);
+    if (mqtt.connect(DEVICE_ID, TOPIC_TELEMETRY, 1, false, lwt)) {
+      Serial.println("OK");
+      mqtt.subscribe(TOPIC_CMD);
+      Serial.printf(">>> Subscribed to %s\n", TOPIC_CMD);
+      publishTelemetry(now);
+    } else {
+      Serial.printf("failed (rc=%d)\n", mqtt.state());
+    }
+  }
+}
+
 void readSerialCommand() {
   while (Serial.available()) {
     char ch = Serial.read();
@@ -116,31 +215,37 @@ void readSerialCommand() {
 
 void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
-  buzzer(false);   // silence the buzzer before anything else
+  buzzer(false);
   Serial.begin(115200);
   delay(300);
   pinMode(LED_PIN, OUTPUT);
-  pinMode(DOOR_PIN, INPUT_PULLUP);      // a cut DO wire reads as OPEN (fail-safe)
+  pinMode(DOOR_PIN, INPUT_PULLUP);
   probe.begin();
-  probe.setWaitForConversion(false);    // keep checking the door while the probe converts
+  probe.setWaitForConversion(false);
   doorOpen = (digitalRead(DOOR_PIN) != DOOR_CLOSED_LEVEL);
   doorOpenedAt = millis();
 
-  Serial.printf("Node 1 - Stage 4: temp GPIO%d (%d found), door GPIO%d, buzzer GPIO%d\n",
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  lastWifiTryAt = millis();
+
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(onMqttCmd);
+  mqtt.setKeepAlive(15);   // 15 s keepalive -> LWT triggers within ~23 s
+
+  Serial.printf("Node 1 - Stage 8: temp GPIO%d (%d found), door GPIO%d, buzzer GPIO%d\n",
                 TEMP_PIN, probe.getDeviceCount(), DOOR_PIN, BUZZER_PIN);
-  Serial.printf("Alarm limits: over %.1f C for %lu s, door open %lu s%s\n",
-                TEMP_HIGH_C, TEMP_ALARM_MS / 1000, DOOR_ALARM_MS / 1000,
-                BENCH_TIMING ? " (bench timing)" : "");
-  Serial.println("Start-up chirp: you should hear 2 short beeps");
+  Serial.printf("MQTT target: %s:%d -> pub %s | sub %s\n",
+                MQTT_HOST, MQTT_PORT, TOPIC_TELEMETRY, TOPIC_CMD);
   for (int i = 0; i < 2; i++) { buzzer(true); delay(120); buzzer(false); delay(120); }
-  Serial.println("Type 'breach' or 'clear' to test the breach alarm");
 }
 
 void loop() {
   unsigned long now = millis();
   readSerialCommand();
+  maintainNetwork(now);
 
-  // Door: accept a change once the reading has been steady for 50 ms
+  // Door
   int raw = digitalRead(DOOR_PIN);
   if (raw != lastRaw) { lastRaw = raw; rawChangedAt = now; }
   bool openNow = (raw != DOOR_CLOSED_LEVEL);
@@ -152,9 +257,10 @@ void loop() {
     } else {
       Serial.printf(">>> DOOR CLOSED (was open %.1f s)\n", (now - doorOpenedAt) / 1000.0);
     }
+    publishTelemetry(now);   // immediate event message
   }
 
-  // Temperature: start a reading every 2 s, collect it 800 ms later
+  // Temperature
   if (!tempPending && now - tempRequestedAt >= TEMP_PERIOD_MS) {
     probe.requestTemperatures();
     tempRequestedAt = now;
@@ -163,11 +269,12 @@ void loop() {
   if (tempPending && now - tempRequestedAt >= CONVERSION_MS) {
     tempPending = false;
     float c = probe.getTempCByIndex(0);
+    lastTempC = c;
     if (c != DEVICE_DISCONNECTED_C) {
       if (c > TEMP_HIGH_C && !overTemp) { overTemp = true; overSince = now; }
       else if (c < TEMP_HIGH_C - TEMP_CLEAR_MARGIN) overTemp = false;
     }
-    if (!breach) digitalWrite(LED_PIN, HIGH);   // heartbeat flash
+    if (!breach) digitalWrite(LED_PIN, HIGH);
     if (c == DEVICE_DISCONNECTED_C) Serial.print("Probe not found");
     else Serial.printf("Temperature: %.2f C", c);
     if (overTemp) Serial.printf(" (over %.1f C for %lu s)", TEMP_HIGH_C, (now - overSince) / 1000);
@@ -176,13 +283,18 @@ void loop() {
     Serial.printf(" | alarm: %s\n", ALARM_NAME[current]);
   }
 
-  // Pick the alarm: breach beats temperature beats door
+  // Alarms (independent of Wi-Fi/MQTT)
   bool tempAlarm = overTemp && now - overSince >= TEMP_ALARM_MS;
   bool doorAlarm = doorOpen && now - doorOpenedAt >= DOOR_ALARM_MS;
   setAlarm(breach ? BREACH : tempAlarm ? TEMP : doorAlarm ? DOOR : NONE, now);
   runBuzzer(now);
 
-  // LED: solid on during a breach, otherwise a short heartbeat flash per reading
+  // Periodic 5 s telemetry
+  if (now - lastPublishAt >= PUBLISH_MS) {
+    publishTelemetry(now);
+  }
+
+  // LED heartbeat / breach
   if (breach) digitalWrite(LED_PIN, HIGH);
   else if (now - tempRequestedAt >= CONVERSION_MS + 100) digitalWrite(LED_PIN, LOW);
 }
