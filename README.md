@@ -70,7 +70,7 @@ cp firmware/node1_fridge/secrets.h.example firmware/node1_fridge/secrets.h
 - [x] Stage 3 — Reed switch door sensor (`docs/evidence/stage_3/03-reed-switch-door.md`)
 - [x] Stage 4 — Buzzer alarms, Node 1 complete (`docs/evidence/stage_4/04-buzzer-alarms.md`)
 - [x] Stage 5 — Node 2: 5 V power-loss detection (`docs/evidence/stage_5/05-node2-power.md`)
-- [ ] Stage 6 — Wi-Fi + MQTT baseline (insecure, measured)
+- [x] Stage 6 — Wi-Fi + MQTT baseline (insecure, measured) (`docs/evidence/stage_6/06-mqtt-baseline.md`)
 - [ ] Stages 7–8 — Gateway + Mobius oneM2M, dashboards and command path
 - [ ] Stages 9–11 — Security hardening (mTLS, ACL, signed updates, firewall, ACP, retention)
 - [ ] Stage 12 — Monitoring + incident response; threat model
