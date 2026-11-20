@@ -125,7 +125,7 @@
   {
     "id": "ui-tab-clinic",
     "type": "ui_tab",
-    "name": "Cold-Chain Monitor",
+    "name": "Smart Fridge Monitor",
     "icon": "ac_unit",
     "order": 1,
     "disabled": false,
