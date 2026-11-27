@@ -5,6 +5,12 @@ secrets.h
 *_private.crt
 *.p12
 *.pfx
+*.csr
+*.srl
+*.crl
+pki/
+fw_sign.*
+!fw_sign.pub
 wifi.txt
 .env
 
