@@ -163,7 +163,7 @@
   {
     "id": "grp-soc-cmd",
     "type": "ui_group",
-    "name": "Remote Alarm Control & Status",
+    "name": "Alarm Control & 24 h Summary",
     "tab": "ui-tab-soc",
     "order": 1,
     "disp": true,
@@ -236,7 +236,7 @@
     "order": 1,
     "width": 8,
     "height": 2,
-    "format": "<div ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'padding': '14px', 'border-radius': '10px', 'color': '#fff', 'text-align': 'center'}\">\n  <div style=\"font-size:16px;font-weight:700;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 1...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>",
+    "format": "<div style=\"height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px 14px;border-radius:10px;color:#fff;text-align:center;\"\n     ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'box-shadow': 'inset 4px 0 0 ' + (msg.payload.bd || '#334155')}\">\n  <div style=\"font-size:16px;font-weight:800;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 1...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>\n",
     "storeOutMessages": false,
     "fwdInMessages": false,
     "resendOnRefresh": true,
@@ -254,7 +254,7 @@
     "order": 3,
     "width": 8,
     "height": 4,
-    "label": "Live Temperature Trend (°C)",
+    "label": "Temperature · last 15 min (°C)",
     "chartType": "line",
     "legend": "false",
     "xformat": "HH:mm:ss",
@@ -332,7 +332,7 @@
     "order": 1,
     "width": 8,
     "height": 2,
-    "format": "<div ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'padding': '14px', 'border-radius': '10px', 'color': '#fff', 'text-align': 'center'}\">\n  <div style=\"font-size:16px;font-weight:700;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 2...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>",
+    "format": "<div style=\"height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px 14px;border-radius:10px;color:#fff;text-align:center;\"\n     ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'box-shadow': 'inset 4px 0 0 ' + (msg.payload.bd || '#334155')}\">\n  <div style=\"font-size:16px;font-weight:800;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 2...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>\n",
     "storeOutMessages": false,
     "fwdInMessages": false,
     "resendOnRefresh": true,
@@ -350,7 +350,7 @@
     "order": 3,
     "width": 8,
     "height": 4,
-    "label": "Mains Power State (1 = ON, 0 = CUT)",
+    "label": "Mains power · last 15 min (1 = ON, 0 = CUT)",
     "chartType": "line",
     "legend": "false",
     "xformat": "HH:mm:ss",
@@ -556,14 +556,17 @@
     "finalize": "",
     "libs": [],
     "name": "Event Log",
-    "func": "// Single owner of the SOC security event log, persisted in the 'file' context store.\n// Inputs:  msg.events = [{sev, src, text}] or msg.event   -> append, broadcast newest VIEW rows\n//          msg.topic 'refresh' (from a dashboard client) -> newest VIEW rows to that client only\n//          msg.topic 'export'  (from a dashboard client) -> all stored rows to that client only\n// Retention: 90 days and at most MAX rows (M12: no personal data is logged, only device events).\nconst KEEP_MS = 90 * 24 * 3600 * 1000, MAX = 1000, VIEW = 100;\n\nlet logs = flow.get('eventLog', 'file') || [];\n\nif (msg.topic === 'export') return { topic: 'export', payload: logs, socketid: msg.socketid };\nif (msg.topic === 'refresh') return { topic: 'log', payload: logs.slice(0, VIEW), socketid: msg.socketid };\n\nconst incoming = msg.events || (msg.event ? [msg.event] : []);\nif (!incoming.length) return null;\n\nconst now = Date.now();\nfor (const e of incoming) logs.unshift({ ts: now, sev: e.sev, src: e.src, text: e.text });\nlogs = logs.filter(l => now - l.ts <= KEEP_MS).slice(0, MAX);\nflow.set('eventLog', logs, 'file');\nnode.status({ text: `${logs.length} events stored` });\nreturn { topic: 'log', payload: logs.slice(0, VIEW) };\n",
-    "outputs": 1,
+    "func": "// Single owner of the SOC security event log, persisted in the 'file' context store.\n// Inputs:  msg.events = [{sev, src, text}] or msg.event   -> append, broadcast newest VIEW rows + summary\n//          msg.topic 'refresh' (SOC feed)    -> newest VIEW rows to that client only\n//          msg.topic 'export'  (SOC feed)    -> all stored rows to that client only\n//          msg.topic 'summary' (SOC summary) -> 24 h summary to that client only\n// Outputs: 1 = SOC feed, 2 = SOC summary tiles\n// Retention: 90 days and at most MAX rows (M12: no personal data is logged, only device events).\nconst KEEP_MS = 90 * 24 * 3600 * 1000, MAX = 1000, VIEW = 100, DAY_MS = 24 * 3600 * 1000;\n\nlet logs = flow.get('eventLog', 'file') || [];\nconst now = Date.now();\n\nconst summary = () => {\n    const day = logs.filter(l => now - l.ts <= DAY_MS);\n    const count = sev => day.filter(l => l.sev === sev).length;\n    return { critical: count('CRITICAL'), warn: count('WARN'), info: count('INFO'), last: logs[0] || null };\n};\n\nif (msg.topic === 'export') return [{ topic: 'export', payload: logs, socketid: msg.socketid }, null];\nif (msg.topic === 'refresh') return [{ topic: 'log', payload: logs.slice(0, VIEW), socketid: msg.socketid }, null];\nif (msg.topic === 'summary') return [null, { topic: 'summary', payload: summary(), socketid: msg.socketid }];\n\nconst incoming = msg.events || (msg.event ? [msg.event] : []);\nif (!incoming.length) return null;\n\nfor (const e of incoming) logs.unshift({ ts: now, sev: e.sev, src: e.src, text: e.text });\nlogs = logs.filter(l => now - l.ts <= KEEP_MS).slice(0, MAX);\nflow.set('eventLog', logs, 'file');\nnode.status({ text: `${logs.length} events stored` });\nreturn [{ topic: 'log', payload: logs.slice(0, VIEW) }, { topic: 'summary', payload: summary() }];\n",
+    "outputs": 2,
     "initialize": "",
     "x": 720,
     "y": 530,
     "wires": [
       [
         "ui-soc-log-tpl"
+      ],
+      [
+        "ui-soc-summary"
       ]
     ]
   },
@@ -741,6 +744,29 @@
     "wires": [
       [
         "ui-power-panel"
+      ]
+    ]
+  },
+  {
+    "id": "ui-soc-summary",
+    "type": "ui_template",
+    "z": "tab-flow-main",
+    "group": "grp-soc-cmd",
+    "name": "SOC 24 h Summary",
+    "order": 0,
+    "width": 6,
+    "height": 3,
+    "format": "<div style=\"display:flex;flex-direction:column;gap:6px;height:100%;\">\n  <span class=\"cc-label\">Security events · last 24 h</span>\n  <div class=\"cc-tiles\">\n    <div class=\"cc-tile\" ng-style=\"{borderColor: s.critical ? '#dc2626' : '#1e293b'}\">\n      <div class=\"v\" ng-style=\"{color: s.critical ? '#f87171' : '#e2e8f0'}\">{{s.critical}}</div><div class=\"k\">Critical</div>\n    </div>\n    <div class=\"cc-tile\" ng-style=\"{borderColor: s.warn ? '#d97706' : '#1e293b'}\">\n      <div class=\"v\" ng-style=\"{color: s.warn ? '#fbbf24' : '#e2e8f0'}\">{{s.warn}}</div><div class=\"k\">Warning</div>\n    </div>\n    <div class=\"cc-tile\"><div class=\"v\" style=\"color:#7dd3fc;\">{{s.info}}</div><div class=\"k\">Info</div></div>\n    <div class=\"cc-tile\">\n      <div class=\"v\" style=\"font-size:13px;line-height:21px;\">{{s.last ? (s.last.ts | date:'HH:mm:ss') : '--'}}</div>\n      <div class=\"k\">Last event</div>\n    </div>\n  </div>\n  <div class=\"cc-muted\" style=\"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\" ng-if=\"s.last\">\n    Latest: <b ng-style=\"{color: color[s.last.sev]}\">{{s.last.sev}}</b> [{{s.last.src}}] {{s.last.text}}\n  </div>\n</div>\n<script>\n(function (scope) {\n  scope.s = { critical: 0, warn: 0, info: 0, last: null };\n  scope.color = { CRITICAL: '#f87171', WARN: '#fbbf24', INFO: '#7dd3fc' };\n  scope.$watch('msg', function (m) { if (m && m.topic === 'summary') scope.s = m.payload; });\n  scope.send({ topic: 'summary' });\n})(scope);\n</script>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1050,
+    "y": 590,
+    "wires": [
+      [
+        "fn-event-log"
       ]
     ]
   }
