@@ -145,9 +145,9 @@
     "type": "ui_group",
     "name": "Vaccine Fridge (Node 1)",
     "tab": "ui-tab-clinic",
-    "order": 1,
+    "order": 2,
     "disp": true,
-    "width": "6",
+    "width": "8",
     "collapse": false
   },
   {
@@ -155,9 +155,9 @@
     "type": "ui_group",
     "name": "Power & Connectivity (Node 2)",
     "tab": "ui-tab-clinic",
-    "order": 2,
+    "order": 3,
     "disp": true,
-    "width": "6",
+    "width": "8",
     "collapse": false
   },
   {
@@ -177,7 +177,7 @@
     "tab": "ui-tab-soc",
     "order": 2,
     "disp": true,
-    "width": "6",
+    "width": "10",
     "collapse": false
   },
   {
@@ -216,7 +216,6 @@
     "y": 140,
     "wires": [
       [
-        "ui-temp-donut",
         "ui-temp-chart",
         "fn-fridge-log"
       ],
@@ -235,7 +234,7 @@
     "group": "grp-clinic-fridge",
     "name": "Fridge Status Banner",
     "order": 1,
-    "width": 6,
+    "width": 8,
     "height": 2,
     "format": "<div ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'padding': '14px', 'border-radius': '10px', 'color': '#fff', 'text-align': 'center'}\">\n  <div style=\"font-size:16px;font-weight:700;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 1...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>",
     "storeOutMessages": false,
@@ -247,39 +246,13 @@
     "wires": []
   },
   {
-    "id": "ui-temp-donut",
-    "type": "ui_gauge",
-    "z": "tab-flow-main",
-    "name": "Temp Donut",
-    "group": "grp-clinic-fridge",
-    "order": 2,
-    "width": 6,
-    "height": 4,
-    "gtype": "donut",
-    "title": "Fridge Temperature",
-    "label": "°C",
-    "format": "{{value | number:2}}",
-    "min": 0,
-    "max": 40,
-    "colors": [
-      "#10b981",
-      "#f59e0b",
-      "#ef4444"
-    ],
-    "seg1": "8",
-    "seg2": "28",
-    "x": 1020,
-    "y": 60,
-    "wires": []
-  },
-  {
     "id": "ui-temp-chart",
     "type": "ui_chart",
     "z": "tab-flow-main",
     "name": "Temp Trend",
     "group": "grp-clinic-fridge",
     "order": 3,
-    "width": 6,
+    "width": 8,
     "height": 4,
     "label": "Live Temperature Trend (°C)",
     "chartType": "line",
@@ -302,22 +275,6 @@
       [],
       []
     ]
-  },
-  {
-    "id": "ui-door-status",
-    "type": "ui_text",
-    "z": "tab-flow-main",
-    "group": "grp-clinic-fridge",
-    "order": 4,
-    "width": 6,
-    "height": 1,
-    "name": "Door Status",
-    "label": "Fridge Door State",
-    "format": "{{msg.payload}}",
-    "layout": "row-spread",
-    "x": 1020,
-    "y": 160,
-    "wires": []
   },
   {
     "id": "mqtt-in-s2",
@@ -358,7 +315,8 @@
         "ui-power-chart"
       ],
       [
-        "fn-render2"
+        "fn-render2",
+        "fn-power-log"
       ],
       [
         "fn-event-log"
@@ -372,7 +330,7 @@
     "group": "grp-clinic-power",
     "name": "Power Status Banner",
     "order": 1,
-    "width": 6,
+    "width": 8,
     "height": 2,
     "format": "<div ng-style=\"{'background': msg.payload.bg || '#1e293b', 'border': '1px solid ' + (msg.payload.bd || '#334155'), 'padding': '14px', 'border-radius': '10px', 'color': '#fff', 'text-align': 'center'}\">\n  <div style=\"font-size:16px;font-weight:700;letter-spacing:0.4px;\">{{msg.payload.title || 'Waiting for Node 2...'}}</div>\n  <div style=\"font-size:12px;margin-top:4px;opacity:0.9;\">{{msg.payload.sub || 'Connecting to MQTT broker'}}</div>\n</div>",
     "storeOutMessages": false,
@@ -389,8 +347,8 @@
     "z": "tab-flow-main",
     "name": "Mains Power Timeline",
     "group": "grp-clinic-power",
-    "order": 2,
-    "width": 6,
+    "order": 3,
+    "width": 8,
     "height": 4,
     "label": "Mains Power State (1 = ON, 0 = CUT)",
     "chartType": "line",
@@ -412,22 +370,6 @@
       [],
       []
     ]
-  },
-  {
-    "id": "ui-node2-heartbeat",
-    "type": "ui_text",
-    "z": "tab-flow-main",
-    "group": "grp-clinic-power",
-    "order": 3,
-    "width": 6,
-    "height": 1,
-    "name": "Node 2 Heartbeat",
-    "label": "Last Heartbeat",
-    "format": "{{msg.payload}}",
-    "layout": "row-spread",
-    "x": 1030,
-    "y": 380,
-    "wires": []
   },
   {
     "id": "ui-btn-breach",
@@ -522,7 +464,7 @@
     "group": "grp-soc-alerts",
     "name": "SOC Security Event Feed",
     "order": 1,
-    "width": 6,
+    "width": 10,
     "height": 8,
     "format": "<div style=\"display:flex;gap:8px;align-items:center;margin-bottom:6px;\">\n  <select ng-model=\"sev\" style=\"background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px;font-size:12px;\">\n    <option value=\"\">All severities</option>\n    <option value=\"CRITICAL\">CRITICAL</option>\n    <option value=\"WARN\">WARN</option>\n    <option value=\"INFO\">INFO</option>\n  </select>\n  <span style=\"flex:1;color:#94a3b8;font-size:11px;\">{{(rows | filter:bySev).length}} shown · kept 90 days</span>\n  <md-button class=\"md-raised md-primary\" style=\"margin:0;min-width:0;\" ng-click=\"exportCsv()\" ng-disabled=\"pending\">\n    {{pending ? '...' : 'Export CSV'}}\n  </md-button>\n</div>\n<div style=\"font-family:monospace;font-size:12px;max-height:330px;overflow-y:auto;\">\n  <div ng-if=\"!(rows | filter:bySev).length\" style=\"color:#94a3b8;padding:12px;text-align:center;\">Monitoring telemetry streams... no security events yet.</div>\n  <div ng-repeat=\"row in rows | filter:bySev track by $index\" style=\"display:flex;align-items:center;gap:8px;padding:7px 8px;border-bottom:1px solid #1e293b;\">\n    <span ng-style=\"{background: color[row.sev] || '#64748b'}\" style=\"color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;min-width:62px;text-align:center;\">{{row.sev}}</span>\n    <span style=\"color:#94a3b8;white-space:nowrap;\">{{row.ts | date:'dd MMM HH:mm:ss'}}</span>\n    <span style=\"color:#38bdf8;font-weight:700;\">[{{row.src}}]</span>\n    <span style=\"color:#e2e8f0;\">{{row.text}}</span>\n  </div>\n</div>\n<script>\n(function (scope) {\n  scope.rows = [];\n  scope.sev = '';\n  scope.pending = false;\n  scope.color = { CRITICAL: '#dc2626', WARN: '#d97706', INFO: '#0284c7' };\n  scope.bySev = function (r) { return !scope.sev || r.sev === scope.sev; };\n  scope.exportCsv = function () { scope.pending = true; scope.send({ topic: 'export' }); };\n  scope.$watch('msg', function (m) {\n    if (!m) return;\n    if (m.topic === 'log') { scope.rows = m.payload || []; return; }\n    if (m.topic === 'export' && scope.pending) {   // only the client that asked downloads\n      scope.pending = false;\n      window.ccCsv('soc-events-' + window.ccStamp() + '.csv', (m.payload || []).filter(scope.bySev), [\n        ['time_local', function (r) { return window.ccTime(r.ts); }],\n        ['severity', function (r) { return r.sev; }, true],\n        ['source', function (r) { return r.src; }, true],\n        ['event', function (r) { return r.text; }, true]\n      ]);\n    }\n  });\n  scope.send({ topic: 'refresh' });   // load stored history when this page opens\n})(scope);\n</script>\n",
     "storeOutMessages": false,
@@ -561,8 +503,8 @@
     "finalize": "",
     "libs": [],
     "name": "Render Fridge + Door Timer + Watchdog",
-    "func": "// Renders the Node 1 banner + door row from flow 's1'. Runs on every update and on the 1 s tick,\n// so the door timer counts live and the watchdog marks the node STALE / OFFLINE when it goes silent.\n// Outputs: 1 = banner, 2 = door row, 3 = events (-> Event Log)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s1') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 1 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 1 OFFLINE: no message for ${age} s` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 1 back online' });\n    context.set('health', health);\n}\n\nconst RED = ['#7f1d1d', '#ef4444'], ORANGE = ['#7c2d12', '#f97316'], AMBER = ['#78350f', '#f59e0b'],\n      BLUE = ['#1e3a8a', '#60a5fa'], GREEN = ['#064e3b', '#10b981'], GREY = ['#1e293b', '#334155'];\nconst banner = (c, title, sub) => ({ bg: c[0], bd: c[1], title, sub });\n\nconst doorSec = s.door === 'OPEN' && s.doorOpenedAt ? Math.max(0, Math.floor((now - s.doorOpenedAt) / 1000)) : 0;\nconst doorTxt = s.door === 'OPEN' ? `Door OPEN ${fmt(doorSec)}` : 'Door closed';\nconst t = Number.isFinite(s.temp) ? `${s.temp.toFixed(2)} °C` : '-- °C';\n\nlet b, doorRow;\nif (health === 'WAITING') {\n    b = banner(GREY, 'Waiting for Node 1...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`);\n    doorRow = 'WAITING';\n} else if (health === 'OFFLINE') {\n    b = banner(RED, 'NODE 1 OFFLINE',\n        `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · last data ${s.lastSeen ? clock(s.lastSeen) : 'never'}`);\n    doorRow = 'UNKNOWN (offline)';\n} else {\n    if (s.alarm === 'BREACH') b = banner(RED, 'SECURITY BREACH ACTIVE', `Buzzer + Red LED locked ON · seq #${s.seq}`);\n    else if (s.temp < cfg.tempLowC) b = banner(BLUE, `FREEZE RISK: BELOW ${cfg.tempLowC} °C`, `${t} · vaccines may be damaged · ${doorTxt}`);\n    else if (s.alarm === 'TEMP') b = banner(ORANGE, 'OVER-TEMPERATURE ALARM', `${t} above ${cfg.tempHighC} °C for ${cfg.tempAlarmS} s+ · ${doorTxt}`);\n    else if (s.temp > cfg.tempHighC) b = banner(AMBER, `WARNING: ABOVE ${cfg.tempHighC} °C`, `${t} · alarm after ${cfg.tempAlarmS} s · ${doorTxt}`);\n    else if (s.alarm === 'DOOR') b = banner(ORANGE, `DOOR ALARM (${fmt(doorSec)})`, `Close vaccine fridge door · buzzer sounding · ${t}`);\n    else if (s.door === 'OPEN') b = banner(AMBER, `DOOR OPEN (${fmt(doorSec)})`, `Alarm at ${fmt(cfg.doorAlarmS)} · ${t}`);\n    else b = banner(GREEN, `COLD-CHAIN SAFE (${cfg.tempLowC}–${cfg.tempHighC} °C)`, `${t} · Door closed`);\n\n    b.sub += ` · ${clock(s.lastSeen)}`;\n    if (health === 'STALE') {\n        b.title = `STALE DATA · ${b.title}`;\n        b.sub = `No message for ${age} s · ${b.sub}`;\n        b.bd = '#eab308';\n    }\n    doorRow = s.door === 'OPEN' ? `OPEN (${fmt(doorSec)})` : 'CLOSED';\n}\nif (cfg.bench) b.sub += ' · BENCH TIMING';\n\n// Only send what changed, so the 1 s tick does not flood the dashboard.\nconst out = [null, null, events.length ? { events } : null];\nconst bKey = JSON.stringify(b);\nif (bKey !== context.get('lastBanner')) { context.set('lastBanner', bKey); out[0] = { payload: b }; }\nif (doorRow !== context.get('lastDoor')) { context.set('lastDoor', doorRow); out[1] = { payload: doorRow }; }\nreturn out;\n",
-    "outputs": 3,
+    "func": "// Renders Node 1 from flow 's1'. Runs on every update and on the 1 s tick, so the door timer counts\n// live and the watchdog marks the node STALE / OFFLINE when it goes silent.\n// Outputs: 1 = banner, 2 = temperature card, 3 = events (-> Event Log), 4 = health (-> status bar)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s1') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 1 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 1 OFFLINE: no message for ${age} s` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 1 back online' });\n    context.set('health', health);\n}\n\nconst RED = ['#7f1d1d', '#ef4444'], ORANGE = ['#7c2d12', '#f97316'], AMBER = ['#78350f', '#f59e0b'],\n      BLUE = ['#1e3a8a', '#60a5fa'], GREEN = ['#064e3b', '#10b981'], GREY = ['#1e293b', '#64748b'];\nconst live = health === 'ONLINE' || health === 'STALE';\nconst doorSec = s.door === 'OPEN' && s.doorOpenedAt ? Math.max(0, Math.floor((now - s.doorOpenedAt) / 1000)) : 0;\nconst doorTxt = s.door === 'OPEN' ? `Door OPEN ${fmt(doorSec)}` : 'Door closed';\nconst t = Number.isFinite(s.temp) ? `${s.temp.toFixed(2)} °C` : '-- °C';\nconst lastData = s.lastSeen ? `last data ${clock(s.lastSeen)}` : 'no data since dashboard start';\n\n// [colours, banner title, banner sub, short label for the temperature card]\nlet c, title, sub, label;\nif (health === 'WAITING') {\n    [c, title, sub, label] = [GREY, 'Waiting for Node 1...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`, 'WAITING'];\n} else if (health === 'OFFLINE') {\n    [c, title, sub, label] = [RED, 'NODE 1 OFFLINE', `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · ${lastData}`, 'OFFLINE'];\n} else {\n    if (s.alarm === 'BREACH') [c, title, sub, label] = [RED, 'SECURITY BREACH ACTIVE', `Buzzer + Red LED locked ON · seq #${s.seq}`, 'BREACH'];\n    else if (s.temp < cfg.tempLowC) [c, title, sub, label] = [BLUE, `FREEZE RISK: BELOW ${cfg.tempLowC} °C`, `${t} · vaccines may be damaged · ${doorTxt}`, 'FREEZE'];\n    else if (s.alarm === 'TEMP') [c, title, sub, label] = [ORANGE, 'OVER-TEMPERATURE ALARM', `${t} above ${cfg.tempHighC} °C for ${cfg.tempAlarmS} s+ · ${doorTxt}`, 'ALARM'];\n    else if (s.temp > cfg.tempHighC) [c, title, sub, label] = [AMBER, `WARNING: ABOVE ${cfg.tempHighC} °C`, `${t} · alarm after ${cfg.tempAlarmS} s · ${doorTxt}`, 'WARNING'];\n    else if (s.alarm === 'DOOR') [c, title, sub, label] = [ORANGE, `DOOR ALARM (${fmt(doorSec)})`, `Close vaccine fridge door · buzzer sounding · ${t}`, 'DOOR ALARM'];\n    else if (s.door === 'OPEN') [c, title, sub, label] = [AMBER, `DOOR OPEN (${fmt(doorSec)})`, `Alarm at ${fmt(cfg.doorAlarmS)} · ${t}`, 'DOOR OPEN'];\n    else [c, title, sub, label] = [GREEN, `COLD-CHAIN SAFE (${cfg.tempLowC}–${cfg.tempHighC} °C)`, `${t} · Door closed`, 'SAFE'];\n    sub += ` · ${clock(s.lastSeen)}`;\n    if (health === 'STALE') {\n        title = `STALE DATA · ${title}`;\n        sub = `No message for ${age} s · ${sub}`;\n        c = [c[0], '#eab308'];\n        label = 'STALE';\n    }\n}\nif (cfg.bench) sub += ' · BENCH TIMING';\nconst b = { bg: c[0], bd: c[1], title, sub };\n\n// Temperature card: big reading + position on a scale with the safe band highlighted.\nconst scale = [-5, cfg.bench ? 40 : 20];\nconst pct = v => Math.max(0, Math.min(100, (v - scale[0]) / (scale[1] - scale[0]) * 100));\nconst card = {\n    live, label, color: c[1],\n    temp: live && Number.isFinite(s.temp) ? s.temp : null,\n    band: { lo: pct(cfg.tempLowC), hi: pct(cfg.tempHighC), pos: live && Number.isFinite(s.temp) ? pct(s.temp) : null },\n    scale, low: cfg.tempLowC, high: cfg.tempHighC,\n    door: live ? s.door : null,\n    doorText: !live ? 'unknown' : s.door === 'OPEN' ? `OPEN ${fmt(doorSec)} (alarm at ${fmt(cfg.doorAlarmS)})` : 'CLOSED',\n    note: live ? `updated ${age} s ago`\n        : health === 'WAITING' ? 'waiting for first reading'\n        : Number.isFinite(s.temp) ? `last ${s.temp.toFixed(1)} °C at ${clock(s.lastSeen)}` : 'no data since dashboard start'\n};\n\nconst hl = {\n    name: 'Node 1 · Fridge', health, bench: cfg.bench,\n    detail: health === 'ONLINE' ? `seq #${s.seq} · ${age} s ago`\n        : health === 'STALE' ? `no data for ${age} s`\n        : health === 'OFFLINE' ? (s.lwtOffline ? `LWT · ${lastData}` : lastData)\n        : 'waiting'\n};\n// Status bar gets BOTH nodes in every message, so a newly opened page (which only receives the\n// last message) always shows the full picture.\nconst allHealth = Object.assign({}, flow.get('nodeHealth'), { n1: hl });\nflow.set('nodeHealth', allHealth);\n\n// Only send what changed, so the 1 s tick does not flood the dashboard.\nconst changed = (key, v) => { const j = JSON.stringify(v); if (j === context.get(key)) return false; context.set(key, j); return true; };\nreturn [\n    changed('lastBanner', b) ? { payload: b } : null,\n    changed('lastCard', card) ? { payload: card } : null,\n    events.length ? { events } : null,\n    changed('lastHealth', hl) ? { payload: allHealth } : null\n];\n",
+    "outputs": 4,
     "initialize": "",
     "x": 720,
     "y": 140,
@@ -571,10 +513,13 @@
         "ui-fridge-banner"
       ],
       [
-        "ui-door-status"
+        "ui-temp-card"
       ],
       [
         "fn-event-log"
+      ],
+      [
+        "ui-status-bar"
       ]
     ]
   },
@@ -586,7 +531,7 @@
     "finalize": "",
     "libs": [],
     "name": "Render Power + Cut Timer + Watchdog",
-    "func": "// Renders the Node 2 banner + heartbeat row from flow 's2'. Runs on every update and on the 1 s tick:\n// live power-cut timer, live \"seconds since last message\", and STALE / OFFLINE watchdog.\n// Outputs: 1 = banner, 2 = heartbeat row, 3 = events (-> Event Log)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s2') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 2 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 2 OFFLINE: no message for ${age} s (SR-14)` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 2 back online' });\n    context.set('health', health);\n}\n\nconst banner = (c, title, sub) => ({ bg: c[0], bd: c[1], title, sub });\nlet b, hb;\nif (health === 'WAITING') {\n    b = banner(['#1e293b', '#334155'], 'Waiting for Node 2...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`);\n    hb = 'WAITING';\n} else if (health === 'OFFLINE') {\n    b = banner(['#7f1d1d', '#ef4444'], 'NODE 2 OFFLINE (SR-14 ALERT)',\n        `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · power monitoring lost`);\n    hb = `OFFLINE · last seq #${s.seq ?? '-'} at ${s.lastSeen ? clock(s.lastSeen) : 'never'}`;\n} else {\n    b = s.mainsOn\n        ? banner(['#064e3b', '#10b981'], 'MAINS POWER ON (230 V OK)', `seq #${s.seq} · Node 2 healthy`)\n        : banner(['#7f1d1d', '#ef4444'], `POWER CUT DETECTED (${fmt(Math.max(0, Math.floor((now - s.cutAt) / 1000)))})`,\n            'Backup battery active · Buzzer sounding');\n    if (health === 'STALE') {\n        b.title = `STALE DATA · ${b.title}`;\n        b.sub = `No message for ${age} s · ${b.sub}`;\n        b.bd = '#eab308';\n    }\n    hb = `seq #${s.seq} · ${age} s ago`;\n}\n\nconst out = [null, null, events.length ? { events } : null];\nconst bKey = JSON.stringify(b);\nif (bKey !== context.get('lastBanner')) { context.set('lastBanner', bKey); out[0] = { payload: b }; }\nif (hb !== context.get('lastHb')) { context.set('lastHb', hb); out[1] = { payload: hb }; }\nreturn out;\n",
+    "func": "// Renders Node 2 from flow 's2'. Runs on every update and on the 1 s tick:\n// live power-cut timer and STALE / OFFLINE watchdog.\n// Outputs: 1 = banner, 2 = health (-> status bar), 3 = events (-> Event Log)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s2') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 2 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 2 OFFLINE: no message for ${age} s (SR-14)` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 2 back online' });\n    context.set('health', health);\n}\n\nconst lastData = s.lastSeen ? `last data ${clock(s.lastSeen)}` : 'no data since dashboard start';\nconst banner = (c, title, sub) => ({ bg: c[0], bd: c[1], title, sub });\nlet b;\nif (health === 'WAITING') {\n    b = banner(['#1e293b', '#64748b'], 'Waiting for Node 2...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`);\n} else if (health === 'OFFLINE') {\n    b = banner(['#7f1d1d', '#ef4444'], 'NODE 2 OFFLINE (SR-14 ALERT)',\n        `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · ${lastData}`);\n} else {\n    b = s.mainsOn\n        ? banner(['#064e3b', '#10b981'], 'MAINS POWER ON (230 V OK)', `seq #${s.seq} · Node 2 healthy`)\n        : banner(['#7f1d1d', '#ef4444'], `POWER CUT DETECTED (${fmt(Math.max(0, Math.floor((now - s.cutAt) / 1000)))})`,\n            'Backup battery active · Buzzer sounding');\n    if (health === 'STALE') {\n        b.title = `STALE DATA · ${b.title}`;\n        b.sub = `No message for ${age} s · ${b.sub}`;\n        b.bd = '#eab308';\n    }\n}\n\nconst hl = {\n    name: 'Node 2 · Power', health, bench: cfg.bench,\n    detail: health === 'ONLINE' ? `seq #${s.seq} · ${age} s ago`\n        : health === 'STALE' ? `no data for ${age} s`\n        : health === 'OFFLINE' ? (s.lwtOffline ? `LWT · ${lastData}` : lastData)\n        : 'waiting'\n};\n// Status bar gets BOTH nodes in every message, so a newly opened page (which only receives the\n// last message) always shows the full picture.\nconst allHealth = Object.assign({}, flow.get('nodeHealth'), { n2: hl });\nflow.set('nodeHealth', allHealth);\n\nconst changed = (key, v) => { const j = JSON.stringify(v); if (j === context.get(key)) return false; context.set(key, j); return true; };\nreturn [\n    changed('lastBanner', b) ? { payload: b } : null,\n    changed('lastHealth', hl) ? { payload: allHealth } : null,\n    events.length ? { events } : null\n];\n",
     "outputs": 3,
     "initialize": "",
     "x": 720,
@@ -596,7 +541,7 @@
         "ui-power-banner"
       ],
       [
-        "ui-node2-heartbeat"
+        "ui-status-bar"
       ],
       [
         "fn-event-log"
@@ -651,8 +596,8 @@
     "id": "fn-fridge-log",
     "type": "function",
     "z": "tab-flow-main",
-    "name": "Fridge Temp Log (24 h)",
-    "func": "// Owns the fridge temperature log (last 24 h, one sample per minute), persisted in the 'file' store.\n// Inputs:  msg.payload = temperature (from Process Node 1; door/alarm/seq read from flow 's1')\n//          msg.topic 'export' (from a dashboard client) -> all rows to that client only\n// The full-rate history stays in Mobius/MySQL; this is the clinic's quick daily record.\nconst KEEP_MS = 24 * 3600 * 1000, EVERY_MS = 60 * 1000;\n\nlet log = flow.get('fridgeLog', 'file') || [];\nif (msg.topic === 'export') return { topic: 'export', payload: log, socketid: msg.socketid };\n\nconst now = Date.now();\nif (log.length && now - log[log.length - 1].ts < EVERY_MS) return null;\n\nconst s = flow.get('s1') || {};\nlog.push({ ts: now, temp: msg.payload, door: s.door, alarm: s.alarm, seq: s.seq });\nlog = log.filter(r => now - r.ts <= KEEP_MS);\nflow.set('fridgeLog', log, 'file');\nnode.status({ text: `${log.length} samples (24 h)` });\nreturn null;\n",
+    "name": "Fridge Temp Log + 24 h Stats",
+    "func": "// Owns the fridge temperature log (last 24 h, one sample per minute), persisted in the 'file' store,\n// and its 24 h statistics. The full-rate history stays in Mobius/MySQL.\n// Inputs:  msg.payload = temperature (from Process Node 1; door/alarm/seq read from flow 's1')\n//          msg.topic 'refresh' / 'export' (from the dashboard panel) -> reply to that client only\n// Output:  {topic:'stats'} broadcast after each new sample, or the reply to refresh/export\nconst KEEP_MS = 24 * 3600 * 1000, EVERY_MS = 60 * 1000;\nconst cfg = flow.get('cfg');\nlet log = flow.get('fridgeLog', 'file') || [];\n\nconst stats = () => {\n    const temps = log.map(r => r.temp).filter(Number.isFinite);\n    if (!temps.length) return { count: 0, low: cfg.tempLowC, high: cfg.tempHighC };\n    return {\n        count: temps.length,\n        min: Math.min(...temps),\n        max: Math.max(...temps),\n        avg: temps.reduce((a, b) => a + b, 0) / temps.length,\n        outMin: temps.filter(v => v < cfg.tempLowC || v > cfg.tempHighC).length,   // 1 sample = 1 minute\n        low: cfg.tempLowC, high: cfg.tempHighC\n    };\n};\n\nif (msg.topic === 'export') return { topic: 'export', payload: log, socketid: msg.socketid };\nif (msg.topic === 'refresh') return { topic: 'stats', payload: stats(), socketid: msg.socketid };\n\nconst now = Date.now();\nif (log.length && now - log[log.length - 1].ts < EVERY_MS) return null;\n\nconst s = flow.get('s1') || {};\nlog.push({ ts: now, temp: msg.payload, door: s.door, alarm: s.alarm, seq: s.seq });\nlog = log.filter(r => now - r.ts <= KEEP_MS);\nflow.set('fridgeLog', log, 'file');\nnode.status({ text: `${log.length} samples (24 h)` });\nreturn { topic: 'stats', payload: stats() };\n",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -662,30 +607,7 @@
     "y": 60,
     "wires": [
       [
-        "ui-fridge-export"
-      ]
-    ]
-  },
-  {
-    "id": "ui-fridge-export",
-    "type": "ui_template",
-    "z": "tab-flow-main",
-    "group": "grp-clinic-fridge",
-    "name": "Fridge CSV Export",
-    "order": 5,
-    "width": 6,
-    "height": 1,
-    "format": "<div style=\"display:flex;align-items:center;gap:8px;\">\n  <span style=\"flex:1;color:#94a3b8;font-size:12px;\">Temperature log · last 24 h · 1 sample/min</span>\n  <md-button class=\"md-raised md-primary\" style=\"margin:0;min-width:0;\" ng-click=\"exportCsv()\" ng-disabled=\"pending\">\n    {{pending ? '...' : 'Export CSV'}}\n  </md-button>\n</div>\n<script>\n(function (scope) {\n  scope.pending = false;\n  scope.exportCsv = function () { scope.pending = true; scope.send({ topic: 'export' }); };\n  scope.$watch('msg', function (m) {\n    if (!m || m.topic !== 'export' || !scope.pending) return;   // only the client that asked downloads\n    scope.pending = false;\n    window.ccCsv('fridge-temperature-' + window.ccStamp() + '.csv', m.payload || [], [\n      ['time_local', function (r) { return window.ccTime(r.ts); }],\n      ['temp_c', function (r) { return r.temp; }],\n      ['door', function (r) { return r.door; }, true],\n      ['alarm', function (r) { return r.alarm; }, true],\n      ['seq', function (r) { return r.seq; }]\n    ]);\n  });\n})(scope);\n</script>\n",
-    "storeOutMessages": false,
-    "fwdInMessages": false,
-    "resendOnRefresh": true,
-    "templateScope": "local",
-    "className": "",
-    "x": 1020,
-    "y": 200,
-    "wires": [
-      [
-        "fn-fridge-log"
+        "ui-fridge-panel"
       ]
     ]
   },
@@ -694,11 +616,11 @@
     "type": "ui_template",
     "z": "tab-flow-main",
     "group": "",
-    "name": "CSV helper (page head)",
+    "name": "Dashboard head (styles + CSV helper)",
     "order": 0,
     "width": 0,
     "height": 0,
-    "format": "<script>\n// Shared CSV download helper for the dashboard (loaded once in the page head).\n// cols = [[header, valueFn, isText]]. Text cells are guarded against CSV/formula injection:\n// event text can contain attacker-controlled payload snippets, so a leading = + - @ is neutralised.\nwindow.ccCsv = function (filename, rows, cols) {\n    var pad = function (n) { return String(n).padStart(2, '0'); };\n    var cell = function (v, isText) {\n        v = v === undefined || v === null ? '' : String(v);\n        if (isText && /^[=+\\-@\\t\\r]/.test(v)) v = \"'\" + v;\n        return /[\",\\r\\n]/.test(v) ? '\"' + v.replace(/\"/g, '\"\"') + '\"' : v;\n    };\n    var lines = [cols.map(function (c) { return c[0]; }).join(',')];\n    rows.forEach(function (r) { lines.push(cols.map(function (c) { return cell(c[1](r), c[2]); }).join(',')); });\n    var csv = lines.join('\\r\\n');\n    var a = document.createElement('a');\n    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));\n    a.download = filename;\n    document.body.appendChild(a);\n    a.click();\n    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);\n    return csv;\n};\nwindow.ccTime = function (ts) {\n    var d = new Date(ts), p = function (n) { return String(n).padStart(2, '0'); };\n    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +\n        p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());\n};\nwindow.ccStamp = function () { return window.ccTime(Date.now()).replace(/[-: ]/g, '').slice(0, 12); };\n</script>\n",
+    "format": "<style>\n/* Shared look for the cold-chain dashboard widgets */\n.cc-card { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:10px 12px; color:#e2e8f0;\n           height:100%; box-sizing:border-box; }\n.cc-muted { color:#94a3b8; font-size:11px; }\n.cc-label { color:#94a3b8; font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; }\n.cc-badge { color:#0b1120; font-size:11px; font-weight:800; letter-spacing:.5px; padding:3px 8px; border-radius:999px; }\n.cc-tiles { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }\n.cc-tile  { background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 4px; text-align:center; }\n.cc-tile .v { font-size:17px; font-weight:800; color:#e2e8f0; white-space:nowrap; }\n.cc-tile .k { font-size:9px; color:#94a3b8; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }\n.cc-chip { display:flex; align-items:center; gap:8px; background:#0f172a; border:1px solid #1e293b; border-radius:999px;\n           padding:5px 14px; font-size:12px; color:#e2e8f0; white-space:nowrap; }\n.cc-dot  { width:10px; height:10px; border-radius:50%; flex:none; }\n.cc-dot.pulse { animation: ccPulse 1.2s ease-in-out infinite; }\n@keyframes ccPulse { 50% { opacity:.35; } }\n</style>\n<script>\n// Shared CSV download helper for the dashboard (loaded once in the page head).\n// cols = [[header, valueFn, isText]]. Text cells are guarded against CSV/formula injection:\n// event text can contain attacker-controlled payload snippets, so a leading = + - @ is neutralised.\nwindow.ccCsv = function (filename, rows, cols) {\n    var pad = function (n) { return String(n).padStart(2, '0'); };\n    var cell = function (v, isText) {\n        v = v === undefined || v === null ? '' : String(v);\n        if (isText && /^[=+\\-@\\t\\r]/.test(v)) v = \"'\" + v;\n        return /[\",\\r\\n]/.test(v) ? '\"' + v.replace(/\"/g, '\"\"') + '\"' : v;\n    };\n    var lines = [cols.map(function (c) { return c[0]; }).join(',')];\n    rows.forEach(function (r) { lines.push(cols.map(function (c) { return cell(c[1](r), c[2]); }).join(',')); });\n    var csv = lines.join('\\r\\n');\n    var a = document.createElement('a');\n    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));\n    a.download = filename;\n    document.body.appendChild(a);\n    a.click();\n    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);\n    return csv;\n};\nwindow.ccTime = function (ts) {\n    var d = new Date(ts), p = function (n) { return String(n).padStart(2, '0'); };\n    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +\n        p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());\n};\nwindow.ccStamp = function () { return window.ccTime(Date.now()).replace(/[-: ]/g, '').slice(0, 12); };\n</script>\n",
     "storeOutMessages": false,
     "fwdInMessages": false,
     "resendOnRefresh": true,
@@ -707,5 +629,119 @@
     "x": 160,
     "y": 600,
     "wires": []
+  },
+  {
+    "id": "grp-clinic-status",
+    "type": "ui_group",
+    "name": "System Status",
+    "tab": "ui-tab-clinic",
+    "order": 1,
+    "disp": false,
+    "width": "16",
+    "collapse": false,
+    "className": ""
+  },
+  {
+    "id": "ui-status-bar",
+    "type": "ui_template",
+    "z": "tab-flow-main",
+    "group": "grp-clinic-status",
+    "name": "Sensor Health Status Bar",
+    "order": 1,
+    "width": 16,
+    "height": 1,
+    "format": "<div style=\"display:flex;align-items:center;gap:10px;height:100%;flex-wrap:wrap;\">\n  <div class=\"cc-chip\" ng-repeat=\"n in [nodes.n1, nodes.n2]\">\n    <span class=\"cc-dot\" ng-class=\"{pulse: n.health === 'OFFLINE' || n.health === 'STALE'}\" ng-style=\"{background: colors[n.health]}\"></span>\n    <b>{{n.name}}</b>\n    <span ng-style=\"{color: colors[n.health]}\" style=\"font-weight:700;\">{{n.health}}</span>\n    <span class=\"cc-muted\">{{n.detail}}</span>\n  </div>\n  <span style=\"flex:1;\"></span>\n  <span class=\"cc-badge\" ng-if=\"nodes.n1.bench !== undefined\" ng-style=\"{background: nodes.n1.bench ? '#f59e0b' : '#10b981'}\">\n    {{nodes.n1.bench ? 'BENCH TIMING' : 'CLINIC TIMING'}}\n  </span>\n</div>\n<script>\n(function (scope) {\n  scope.colors = { ONLINE: '#10b981', STALE: '#eab308', OFFLINE: '#ef4444', WAITING: '#64748b' };\n  scope.nodes = {\n    n1: { name: 'Node 1 · Fridge', health: 'WAITING', detail: 'waiting' },\n    n2: { name: 'Node 2 · Power', health: 'WAITING', detail: 'waiting' }\n  };\n  scope.$watch('msg', function (m) {\n    if (m && m.payload) angular.extend(scope.nodes, m.payload);\n  });\n})(scope);\n</script>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1040,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "ui-temp-card",
+    "type": "ui_template",
+    "z": "tab-flow-main",
+    "group": "grp-clinic-fridge",
+    "name": "Fridge Temperature Card",
+    "order": 2,
+    "width": 8,
+    "height": 4,
+    "format": "<div class=\"cc-card\" style=\"display:flex;flex-direction:column;justify-content:space-between;\">\n  <div style=\"display:flex;align-items:center;\">\n    <span class=\"cc-label\">Fridge temperature</span>\n    <span style=\"flex:1;\"></span>\n    <span class=\"cc-badge\" ng-style=\"{background: msg.payload.color || '#64748b'}\">{{msg.payload.label || 'WAITING'}}</span>\n  </div>\n  <div style=\"display:flex;align-items:baseline;gap:6px;\">\n    <span style=\"font-size:52px;font-weight:800;line-height:1;\"\n          ng-style=\"{color: msg.payload.temp !== null && msg.payload.temp !== undefined ? msg.payload.color : '#475569'}\">\n      {{msg.payload.temp !== null && msg.payload.temp !== undefined ? (msg.payload.temp | number:1) : '--.-'}}\n    </span>\n    <span style=\"font-size:20px;color:#94a3b8;\">°C</span>\n  </div>\n  <div>\n    <div style=\"position:relative;height:10px;border-radius:5px;background:#1e293b;\">\n      <div style=\"position:absolute;top:0;bottom:0;background:#065f46;border-radius:5px;\"\n           ng-style=\"{left: msg.payload.band.lo + '%', width: (msg.payload.band.hi - msg.payload.band.lo) + '%'}\"></div>\n      <div ng-if=\"msg.payload.band.pos !== null && msg.payload.band.pos !== undefined\"\n           style=\"position:absolute;top:-4px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:#f8fafc;box-shadow:0 0 6px #000;\"\n           ng-style=\"{left: msg.payload.band.pos + '%'}\"></div>\n    </div>\n    <div class=\"cc-muted\" style=\"display:flex;justify-content:space-between;margin-top:3px;\">\n      <span>{{msg.payload.scale[0]}} °C</span>\n      <span style=\"color:#10b981;\">safe {{msg.payload.low}}–{{msg.payload.high}} °C</span>\n      <span>{{msg.payload.scale[1]}} °C</span>\n    </div>\n  </div>\n  <div style=\"display:flex;align-items:center;font-size:13px;\">\n    <span>Door&nbsp;<b ng-style=\"{color: msg.payload.door === 'OPEN' ? '#f59e0b' : (msg.payload.door ? '#10b981' : '#64748b')}\">{{msg.payload.doorText || 'unknown'}}</b></span>\n    <span style=\"flex:1;\"></span>\n    <span class=\"cc-muted\">{{msg.payload.note}}</span>\n  </div>\n</div>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1030,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "ui-fridge-panel",
+    "type": "ui_template",
+    "z": "tab-flow-main",
+    "group": "grp-clinic-fridge",
+    "name": "Fridge 24 h Panel + CSV",
+    "order": 4,
+    "width": 8,
+    "height": 2,
+    "format": "<div style=\"display:flex;flex-direction:column;gap:6px;height:100%;\">\n  <div style=\"display:flex;align-items:center;\">\n    <span class=\"cc-label\">Last 24 h · 1 sample/min</span>\n    <span style=\"flex:1;\"></span>\n    <md-button class=\"md-raised md-primary\" style=\"margin:0;min-width:0;min-height:28px;line-height:28px;\" ng-click=\"exportCsv()\" ng-disabled=\"pending\">\n      {{pending ? '...' : 'Export CSV'}}\n    </md-button>\n  </div>\n  <div class=\"cc-tiles\">\n    <div class=\"cc-tile\"><div class=\"v\">{{stats.count ? (stats.min | number:1) + '°' : '--'}}</div><div class=\"k\">Min</div></div>\n    <div class=\"cc-tile\"><div class=\"v\">{{stats.count ? (stats.max | number:1) + '°' : '--'}}</div><div class=\"k\">Max</div></div>\n    <div class=\"cc-tile\"><div class=\"v\">{{stats.count ? (stats.avg | number:1) + '°' : '--'}}</div><div class=\"k\">Average</div></div>\n    <div class=\"cc-tile\" ng-style=\"{borderColor: stats.outMin ? '#ef4444' : '#1e293b'}\">\n      <div class=\"v\" ng-style=\"{color: stats.outMin ? '#f87171' : '#e2e8f0'}\">{{stats.count ? stats.outMin + ' min' : '--'}}</div>\n      <div class=\"k\">Out of {{stats.low}}–{{stats.high}}°</div>\n    </div>\n  </div>\n</div>\n<script>\n(function (scope) {\n  scope.stats = { count: 0 };\n  scope.pending = false;\n  scope.exportCsv = function () { scope.pending = true; scope.send({ topic: 'export' }); };\n  scope.$watch('msg', function (m) {\n    if (!m) return;\n    if (m.topic === 'stats') { scope.stats = m.payload || { count: 0 }; return; }\n    if (m.topic === 'export' && scope.pending) {   // only the client that asked downloads\n      scope.pending = false;\n      window.ccCsv('fridge-temperature-' + window.ccStamp() + '.csv', m.payload || [], [\n        ['time_local', function (r) { return window.ccTime(r.ts); }],\n        ['temp_c', function (r) { return r.temp; }],\n        ['door', function (r) { return r.door; }, true],\n        ['alarm', function (r) { return r.alarm; }, true],\n        ['seq', function (r) { return r.seq; }]\n      ]);\n    }\n  });\n  scope.send({ topic: 'refresh' });\n})(scope);\n</script>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1030,
+    "y": 60,
+    "wires": [
+      [
+        "fn-fridge-log"
+      ]
+    ]
+  },
+  {
+    "id": "ui-power-panel",
+    "type": "ui_template",
+    "z": "tab-flow-main",
+    "group": "grp-clinic-power",
+    "name": "Power 24 h Panel",
+    "order": 2,
+    "width": 8,
+    "height": 2,
+    "format": "<div style=\"display:flex;flex-direction:column;gap:6px;height:100%;\">\n  <span class=\"cc-label\">Power cuts · last 24 h</span>\n  <div class=\"cc-tiles\">\n    <div class=\"cc-tile\" ng-style=\"{borderColor: stats.count ? '#ef4444' : '#1e293b'}\">\n      <div class=\"v\" ng-style=\"{color: stats.count ? '#f87171' : '#e2e8f0'}\">{{stats.count}}</div><div class=\"k\">Cuts</div>\n    </div>\n    <div class=\"cc-tile\"><div class=\"v\">{{dur(stats.totalS)}}</div><div class=\"k\">Total off</div></div>\n    <div class=\"cc-tile\"><div class=\"v\">{{dur(stats.longestS)}}</div><div class=\"k\">Longest</div></div>\n    <div class=\"cc-tile\" ng-style=\"{borderColor: stats.ongoingSince ? '#ef4444' : '#1e293b'}\">\n      <div class=\"v\" style=\"font-size:13px;line-height:21px;\" ng-style=\"{color: stats.ongoingSince ? '#f87171' : '#10b981'}\">\n        {{stats.ongoingSince ? 'CUT NOW' : 'OK'}}\n      </div>\n      <div class=\"k\">{{stats.ongoingSince ? 'since ' + (stats.ongoingSince | date:'HH:mm') : (stats.lastEnd ? 'restored ' + (stats.lastEnd | date:'HH:mm') : 'no cuts')}}</div>\n    </div>\n  </div>\n</div>\n<script>\n(function (scope) {\n  scope.stats = { count: 0, totalS: 0, longestS: 0 };\n  scope.dur = function (s) {\n    s = s || 0;\n    if (s < 60) return s + 's';\n    if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';\n    return Math.floor(s / 3600) + 'h ' + Math.floor(s % 3600 / 60) + 'm';\n  };\n  scope.$watch('msg', function (m) { if (m && m.topic === 'stats') scope.stats = m.payload; });\n  scope.send({ topic: 'refresh' });\n})(scope);\n</script>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": true,
+    "templateScope": "local",
+    "className": "",
+    "x": 1030,
+    "y": 420,
+    "wires": [
+      [
+        "fn-power-log"
+      ]
+    ]
+  },
+  {
+    "id": "fn-power-log",
+    "type": "function",
+    "z": "tab-flow-main",
+    "name": "Power Cut Log + 24 h Stats",
+    "func": "// Owns the power-cut history (last 24 h), persisted in the 'file' store, and its statistics.\n// Inputs:  state update from Process Node 2 (reads flow 's2')\n//          msg.topic 'refresh' (from the dashboard panel) -> reply to that client only\n// Output:  {topic:'stats'} when a cut starts or ends, or the reply to refresh\nconst KEEP_MS = 24 * 3600 * 1000;\nlet cuts = flow.get('powerCuts', 'file') || [];\nconst now = Date.now();\n\nconst stats = () => {\n    const dur = c => Math.round(((c.end || now) - c.start) / 1000);\n    const open = cuts.find(c => !c.end);\n    return {\n        count: cuts.length,\n        totalS: cuts.reduce((a, c) => a + dur(c), 0),\n        longestS: cuts.reduce((a, c) => Math.max(a, dur(c)), 0),\n        ongoingSince: open ? open.start : null,\n        lastEnd: cuts.filter(c => c.end).map(c => c.end).pop() || null\n    };\n};\n\nif (msg.topic === 'refresh') return { topic: 'stats', payload: stats(), socketid: msg.socketid };\n\nconst s = flow.get('s2') || {};\nif (s.lwtOffline || typeof s.mainsOn !== 'boolean') return null;   // offline is not a power cut\n\nconst open = cuts.length && !cuts[cuts.length - 1].end;\nif (!s.mainsOn && !open) cuts.push({ start: s.cutAt || now });\nelse if (s.mainsOn && open) cuts[cuts.length - 1].end = now;\nelse return null;\n\ncuts = cuts.filter(c => !c.end || now - c.end <= KEEP_MS);\nflow.set('powerCuts', cuts, 'file');\nnode.status({ text: `${cuts.length} cuts (24 h)` });\nreturn { topic: 'stats', payload: stats() };\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 720,
+    "y": 420,
+    "wires": [
+      [
+        "ui-power-panel"
+      ]
+    ]
   }
 ]
