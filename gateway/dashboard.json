@@ -104,7 +104,7 @@
     "id": "mqtt-broker-pi",
     "type": "mqtt-broker",
     "name": "Raspberry Pi 4 Mosquitto",
-    "broker": "192.168.0.24",
+    "broker": "localhost",
     "port": "1883",
     "clientid": "nodered-dashboard",
     "autoConnect": true,
@@ -195,15 +195,19 @@
     "inputs": 0,
     "x": 140,
     "y": 140,
-    "wires": [["fn-node1"]]
+    "wires": [
+      [
+        "fn-node1"
+      ]
+    ]
   },
   {
     "id": "fn-node1",
     "type": "function",
     "z": "tab-flow-main",
     "name": "Process Node 1 + Security Checks",
-    "func": "const d = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\nconst nowStr = new Date().toLocaleTimeString();\nconst pushLog = (sev, src, text) => {\n  const logs = flow.get('secLogs') || [];\n  const badgeColor = sev === 'CRITICAL' ? '#dc2626' : (sev === 'WARN' ? '#d97706' : '#0284c7');\n  logs.unshift({ time: nowStr, sev, src, text, color: badgeColor });\n  if (logs.length > 12) logs.pop();\n  flow.set('secLogs', logs);\n  return logs;\n};\n\nlet logs = flow.get('secLogs') || [];\n\nif (d.status === 'offline') {\n  logs = pushLog('CRITICAL', 'sensor01', 'Node 1 went OFFLINE (LWT triggered)');\n  return [\n    null,\n    { payload: { bg: '#7f1d1d', bd: '#ef4444', title: 'NODE 1 OFFLINE', sub: `Lost connection · ${nowStr}` } },\n    { payload: 'OFFLINE' },\n    { payload: logs }\n  ];\n}\n\nconst temp = Number(d.temp);\nconst door = String(d.door || 'closed').toUpperCase();\nconst doorS = d.door_open_s || 0;\nconst alarm = d.alarm || 'NONE';\n\nconst lastSeq = flow.get('s1_last_seq');\nif (d.fake === true || temp < -20 || temp > 60) {\n  logs = pushLog('CRITICAL', 'sensor01', `Implausible/Spoofed reading detected (temp=${temp}C, seq=${d.seq})`);\n} else if (lastSeq !== undefined && d.seq <= lastSeq && d.seq > 5) {\n  logs = pushLog('WARN', 'sensor01', `Replay or duplicate seq detected (${d.seq} <= ${lastSeq})`);\n} else if (lastSeq !== undefined && d.seq > lastSeq + 1) {\n  logs = pushLog('WARN', 'sensor01', `Sequence gap: ${lastSeq} -> ${d.seq}`);\n}\nflow.set('s1_last_seq', d.seq);\n\nconst prevAlarm = flow.get('s1_prev_alarm');\nif (alarm !== prevAlarm) {\n  if (alarm !== 'NONE') {\n    logs = pushLog(alarm === 'BREACH' ? 'CRITICAL' : 'WARN', 'sensor01', `Alarm activated: ${alarm} (temp=${temp}C, door=${door})`);\n  } else if (prevAlarm) {\n    logs = pushLog('INFO', 'sensor01', 'Alarm cleared (normal operation resumed)');\n  }\n  flow.set('s1_prev_alarm', alarm);\n}\n\nlet bg = '#064e3b', bd = '#10b981', title = 'COLD-CHAIN SAFE (2–8 °C)', sub = `Temp ${temp.toFixed(2)} °C · Door ${door}`;\nif (alarm === 'BREACH') {\n  bg = '#7f1d1d'; bd = '#ef4444'; title = 'SECURITY BREACH ACTIVE'; sub = `Buzzer + Red LED locked ON · seq #${d.seq}`;\n} else if (alarm === 'TEMP' || temp > 28) {\n  bg = '#7f1d1d'; bd = '#f97316'; title = 'OVER-TEMPERATURE ALERT'; sub = `${temp.toFixed(2)} °C exceeds safe limit!`;\n} else if (alarm === 'DOOR' || door === 'OPEN') {\n  bg = '#78350f'; bd = '#f59e0b'; title = `DOOR OPEN (${doorS} s)`; sub = alarm === 'DOOR' ? 'Door open alarm sounding!' : 'Close vaccine fridge door';\n} else if (temp > 8) {\n  bg = '#78350f'; bd = '#eab308'; title = 'WARNING: ABOVE 8 °C'; sub = `Current: ${temp.toFixed(2)} °C (warming)`;\n}\n\nreturn [\n  { payload: temp },\n  { payload: { bg, bd, title, sub: `${sub} · ${nowStr}` } },\n  { payload: `${door} (${doorS} s)` },\n  { payload: logs }\n];",
-    "outputs": 4,
+    "func": "// Parses sensor01 telemetry, runs Layer-1 security checks and stores state in flow 's1'.\n// Outputs: 1 = temperature (gauge + chart), 2 = state changed (-> Render Fridge), 3 = events (-> Event Log)\nconst events = [];\nconst log = (sev, text) => events.push({ sev, src: 'sensor01', text });\n\nlet d = msg.payload;\nif (typeof d === 'string') {\n    try { d = JSON.parse(d); } catch (e) { d = null; }\n}\nif (!d || typeof d !== 'object') {\n    log('WARN', `Malformed telemetry dropped: ${String(msg.payload).slice(0, 60)}`);\n    return [null, null, { events }];\n}\n\n// Retained messages are replayed by the broker on every reconnect: old data (or a planted\n// spoof), never a live reading. Log it and do not let it refresh the watchdog or charts.\nif (msg.retain) {\n    log('WARN', `Ignored RETAINED telemetry (seq=${d.seq}): stale or planted message on broker`);\n    return [null, null, { events }];\n}\n\nconst prev = flow.get('s1') || {};\n\nif (d.status === 'offline') {\n    log('CRITICAL', 'Node 1 went OFFLINE (LWT triggered)');\n    flow.set('s1', Object.assign({}, prev, { lwtOffline: true }));\n    return [null, { topic: 'update' }, { events }];\n}\n\nconst now = Date.now();\nconst temp = Number(d.temp);\nconst door = String(d.door || 'closed').toUpperCase();\nconst doorS = Number(d.door_open_s) || 0;\nconst alarm = d.alarm || 'NONE';\n\nconst lastSeq = flow.get('s1_last_seq');\nif (d.fake === true || !Number.isFinite(temp) || temp < -20 || temp > 60) {\n    log('CRITICAL', `Implausible/Spoofed reading detected (temp=${d.temp}C, seq=${d.seq})`);\n} else if (lastSeq !== undefined && d.seq <= lastSeq && d.seq > 5) {\n    log('WARN', `Replay or duplicate seq detected (${d.seq} <= ${lastSeq})`);\n} else if (lastSeq !== undefined && d.seq > lastSeq + 1) {\n    log('WARN', `Sequence gap: ${lastSeq} -> ${d.seq}`);\n}\nflow.set('s1_last_seq', d.seq);\n\nconst prevAlarm = flow.get('s1_prev_alarm');\nif (alarm !== prevAlarm) {\n    if (alarm !== 'NONE') {\n        log(alarm === 'BREACH' ? 'CRITICAL' : 'WARN', `Alarm activated: ${alarm} (temp=${temp}C, door=${door})`);\n    } else if (prevAlarm) {\n        log('INFO', 'Alarm cleared (normal operation resumed)');\n    }\n    flow.set('s1_prev_alarm', alarm);\n}\n\n// Door-open start time, so the dashboard timer keeps counting between messages.\n// Re-sync to the firmware's door_open_s only if we drift by more than 2 s.\nlet doorOpenedAt = null;\nif (door === 'OPEN') {\n    const fromDevice = now - doorS * 1000;\n    doorOpenedAt = (prev.door === 'OPEN' && prev.doorOpenedAt && Math.abs(prev.doorOpenedAt - fromDevice) <= 2000)\n        ? prev.doorOpenedAt : fromDevice;\n}\n\nflow.set('s1', { lastSeen: now, lwtOffline: false, temp, door, doorOpenedAt, alarm, seq: d.seq });\n\nreturn [\n    Number.isFinite(temp) ? { payload: temp } : null,\n    { topic: 'update' },\n    events.length ? { events } : null\n];\n",
+    "outputs": 3,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
@@ -211,10 +215,16 @@
     "x": 400,
     "y": 140,
     "wires": [
-      ["ui-temp-donut", "ui-temp-chart"],
-      ["ui-fridge-banner"],
-      ["ui-door-status"],
-      ["ui-soc-log-tpl"]
+      [
+        "ui-temp-donut",
+        "ui-temp-chart"
+      ],
+      [
+        "fn-render1"
+      ],
+      [
+        "fn-event-log"
+      ]
     ]
   },
   {
@@ -231,8 +241,8 @@
     "fwdInMessages": false,
     "resendOnRefresh": true,
     "templateScope": "local",
-    "x": 700,
-    "y": 60,
+    "x": 1030,
+    "y": 100,
     "wires": []
   },
   {
@@ -250,11 +260,15 @@
     "format": "{{value | number:2}}",
     "min": 0,
     "max": 40,
-    "colors": ["#10b981", "#f59e0b", "#ef4444"],
+    "colors": [
+      "#10b981",
+      "#f59e0b",
+      "#ef4444"
+    ],
     "seg1": "8",
     "seg2": "28",
-    "x": 690,
-    "y": 110,
+    "x": 1020,
+    "y": 60,
     "wires": []
   },
   {
@@ -277,11 +291,16 @@
     "ymax": "40",
     "removeOlder": "15",
     "removeOlderUnit": "60",
-    "colors": ["#38bdf8"],
+    "colors": [
+      "#38bdf8"
+    ],
     "useOneColor": false,
-    "x": 690,
-    "y": 160,
-    "wires": [[], []]
+    "x": 1020,
+    "y": 20,
+    "wires": [
+      [],
+      []
+    ]
   },
   {
     "id": "ui-door-status",
@@ -295,8 +314,8 @@
     "label": "Fridge Door State",
     "format": "{{msg.payload}}",
     "layout": "row-spread",
-    "x": 690,
-    "y": 210,
+    "x": 1020,
+    "y": 160,
     "wires": []
   },
   {
@@ -314,15 +333,19 @@
     "inputs": 0,
     "x": 140,
     "y": 340,
-    "wires": [["fn-node2"]]
+    "wires": [
+      [
+        "fn-node2"
+      ]
+    ]
   },
   {
     "id": "fn-node2",
     "type": "function",
     "z": "tab-flow-main",
     "name": "Process Node 2 + Power Checks",
-    "func": "const d = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\nconst nowStr = new Date().toLocaleTimeString();\nconst pushLog = (sev, src, text) => {\n  const logs = flow.get('secLogs') || [];\n  const badgeColor = sev === 'CRITICAL' ? '#dc2626' : (sev === 'WARN' ? '#d97706' : '#0284c7');\n  logs.unshift({ time: nowStr, sev, src, text, color: badgeColor });\n  if (logs.length > 12) logs.pop();\n  flow.set('secLogs', logs);\n  return logs;\n};\n\nlet logs = flow.get('secLogs') || [];\n\nif (d.status === 'offline') {\n  logs = pushLog('CRITICAL', 'sensor02', 'Node 2 Power Monitor OFFLINE (LWT / battery dead)');\n  return [\n    { payload: { bg: '#7f1d1d', bd: '#ef4444', title: 'NODE 2 OFFLINE (SR-14 ALERT)', sub: `Power monitor silenced · ${nowStr}` } },\n    { payload: 0 },\n    { payload: 'OFFLINE' },\n    { payload: logs }\n  ];\n}\n\nconst mainsOn = String(d.mains).toLowerCase() === 'on';\nconst offS = d.off_s || 0;\nconst prevMains = flow.get('s2_prev_mains');\nif (prevMains !== mainsOn) {\n  logs = pushLog(mainsOn ? 'INFO' : 'CRITICAL', 'sensor02', mainsOn ? 'Mains power RESTORED' : 'Mains power CUT detected — running on backup');\n  flow.set('s2_prev_mains', mainsOn);\n}\n\nconst bg = mainsOn ? '#064e3b' : '#7f1d1d';\nconst bd = mainsOn ? '#10b981' : '#ef4444';\nconst title = mainsOn ? 'MAINS POWER ON (230 V OK)' : `POWER CUT DETECTED (${offS} s)`;\nconst sub = mainsOn ? `seq #${d.seq} · Node 2 healthy · ${nowStr}` : `Backup battery active · Buzzer sounding · ${nowStr}`;\n\nreturn [\n  { payload: { bg, bd, title, sub } },\n  { payload: mainsOn ? 1 : 0 },\n  { payload: `seq #${d.seq} (${nowStr})` },\n  { payload: logs }\n];",
-    "outputs": 4,
+    "func": "// Parses sensor02 telemetry and stores state in flow 's2'.\n// Outputs: 1 = mains 1/0 (chart), 2 = state changed (-> Render Power), 3 = events (-> Event Log)\nconst events = [];\nconst log = (sev, text) => events.push({ sev, src: 'sensor02', text });\n\nlet d = msg.payload;\nif (typeof d === 'string') {\n    try { d = JSON.parse(d); } catch (e) { d = null; }\n}\nif (!d || typeof d !== 'object') {\n    log('WARN', `Malformed telemetry dropped: ${String(msg.payload).slice(0, 60)}`);\n    return [null, null, { events }];\n}\n\n// Retained messages are replayed by the broker on every reconnect: old data (or a planted\n// spoof), never a live reading. Log it and do not let it refresh the watchdog or charts.\nif (msg.retain) {\n    log('WARN', `Ignored RETAINED telemetry (seq=${d.seq}): stale or planted message on broker`);\n    return [null, null, { events }];\n}\n\nconst prev = flow.get('s2') || {};\n\nif (d.status === 'offline') {\n    log('CRITICAL', 'Node 2 Power Monitor OFFLINE (LWT / battery dead)');\n    flow.set('s2', Object.assign({}, prev, { lwtOffline: true }));\n    return [{ payload: 0 }, { topic: 'update' }, { events }];\n}\n\nconst now = Date.now();\nconst mainsOn = String(d.mains).toLowerCase() === 'on';\nconst offS = Number(d.off_s) || 0;\nif (prev.mainsOn !== mainsOn) {\n    log(mainsOn ? 'INFO' : 'CRITICAL', mainsOn ? 'Mains power RESTORED' : 'Mains power CUT detected — running on backup');\n}\n\n// Power-cut start time so the cut timer keeps counting between messages (re-sync if > 2 s drift).\nlet cutAt = null;\nif (!mainsOn) {\n    const fromDevice = now - offS * 1000;\n    cutAt = (prev.mainsOn === false && prev.cutAt && Math.abs(prev.cutAt - fromDevice) <= 2000) ? prev.cutAt : fromDevice;\n}\n\nflow.set('s2', { lastSeen: now, lwtOffline: false, mainsOn, cutAt, seq: d.seq });\n\nreturn [{ payload: mainsOn ? 1 : 0 }, { topic: 'update' }, events.length ? { events } : null];\n",
+    "outputs": 3,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
@@ -330,10 +353,15 @@
     "x": 400,
     "y": 340,
     "wires": [
-      ["ui-power-banner"],
-      ["ui-power-chart"],
-      ["ui-node2-heartbeat"],
-      ["ui-soc-log-tpl"]
+      [
+        "ui-power-chart"
+      ],
+      [
+        "fn-render2"
+      ],
+      [
+        "fn-event-log"
+      ]
     ]
   },
   {
@@ -350,8 +378,8 @@
     "fwdInMessages": false,
     "resendOnRefresh": true,
     "templateScope": "local",
-    "x": 700,
-    "y": 290,
+    "x": 1030,
+    "y": 320,
     "wires": []
   },
   {
@@ -374,10 +402,15 @@
     "ymax": "1.2",
     "removeOlder": "15",
     "removeOlderUnit": "60",
-    "colors": ["#10b981"],
-    "x": 710,
-    "y": 340,
-    "wires": [[], []]
+    "colors": [
+      "#10b981"
+    ],
+    "x": 1040,
+    "y": 280,
+    "wires": [
+      [],
+      []
+    ]
   },
   {
     "id": "ui-node2-heartbeat",
@@ -391,8 +424,8 @@
     "label": "Last Heartbeat",
     "format": "{{msg.payload}}",
     "layout": "row-spread",
-    "x": 700,
-    "y": 390,
+    "x": 1030,
+    "y": 380,
     "wires": []
   },
   {
@@ -415,7 +448,12 @@
     "topic": "campus/sensor01/cmd",
     "x": 150,
     "y": 480,
-    "wires": [["mqtt-out-cmd", "fn-cmd-log"]]
+    "wires": [
+      [
+        "mqtt-out-cmd",
+        "fn-cmd-log"
+      ]
+    ]
   },
   {
     "id": "ui-btn-clear",
@@ -437,7 +475,12 @@
     "topic": "campus/sensor01/cmd",
     "x": 150,
     "y": 530,
-    "wires": [["mqtt-out-cmd", "fn-cmd-log"]]
+    "wires": [
+      [
+        "mqtt-out-cmd",
+        "fn-cmd-log"
+      ]
+    ]
   },
   {
     "id": "mqtt-out-cmd",
@@ -457,7 +500,7 @@
     "type": "function",
     "z": "tab-flow-main",
     "name": "Log Dashboard CMD",
-    "func": "const nowStr = new Date().toLocaleTimeString();\nconst logs = flow.get('secLogs') || [];\nconst isBreach = msg.payload === 'breach';\nlogs.unshift({\n  time: nowStr,\n  sev: isBreach ? 'CRITICAL' : 'INFO',\n  src: 'dashboard',\n  text: `Operator sent '${msg.payload}' -> campus/sensor01/cmd`,\n  color: isBreach ? '#dc2626' : '#0284c7'\n});\nif (logs.length > 12) logs.pop();\nflow.set('secLogs', logs);\nreturn { payload: logs };",
+    "func": "const isBreach = msg.payload === 'breach';\nreturn { event: {\n    sev: isBreach ? 'CRITICAL' : 'INFO',\n    src: 'dashboard',\n    text: `Operator sent '${msg.payload}' -> campus/sensor01/cmd`\n} };\n",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -465,7 +508,11 @@
     "libs": [],
     "x": 420,
     "y": 530,
-    "wires": [["ui-soc-log-tpl"]]
+    "wires": [
+      [
+        "fn-event-log"
+      ]
+    ]
   },
   {
     "id": "ui-soc-log-tpl",
@@ -481,8 +528,117 @@
     "fwdInMessages": false,
     "resendOnRefresh": true,
     "templateScope": "local",
-    "x": 730,
-    "y": 480,
+    "x": 1050,
+    "y": 530,
     "wires": []
+  },
+  {
+    "id": "fn-alert-config",
+    "type": "function",
+    "z": "tab-flow-main",
+    "noerr": 0,
+    "finalize": "",
+    "libs": [],
+    "name": "Alert Config (BENCH_TIMING)",
+    "func": "return null;",
+    "outputs": 0,
+    "initialize": "// SINGLE PLACE for dashboard alert thresholds.\n// Keep BENCH_TIMING equal to `#define BENCH_TIMING` in firmware/node1_fridge/node1_fridge.ino\n//   1 = desk test timings (28 °C / 10 s, door 15 s)\n//   0 = real clinic timings for SR-13 (8 °C / 10 min, door 5 min)\nconst BENCH_TIMING = 1;\n\nconst cfg = {\n    bench: BENCH_TIMING === 1,\n    tempLowC: 2.0,                          // below this = freeze risk (dashboard-only rule)\n    tempHighC: BENCH_TIMING ? 28.0 : 8.0,   // firmware TEMP_HIGH_C\n    tempAlarmS: BENCH_TIMING ? 10 : 600,    // firmware TEMP_ALARM_MS / 1000\n    doorAlarmS: BENCH_TIMING ? 15 : 300,    // firmware DOOR_ALARM_MS / 1000\n    staleS: 15,                             // firmware publishes every 5 s -> 3 missed messages\n    offlineS: 30                            // 6 missed messages\n};\nflow.set('cfg', cfg);\nnode.status({ fill: cfg.bench ? 'yellow' : 'green', shape: 'dot',\n    text: `${cfg.bench ? 'BENCH' : 'CLINIC'} · ${cfg.tempLowC}–${cfg.tempHighC} °C · door ${cfg.doorAlarmS} s` });\n",
+    "x": 160,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "fn-render1",
+    "type": "function",
+    "z": "tab-flow-main",
+    "noerr": 0,
+    "finalize": "",
+    "libs": [],
+    "name": "Render Fridge + Door Timer + Watchdog",
+    "func": "// Renders the Node 1 banner + door row from flow 's1'. Runs on every update and on the 1 s tick,\n// so the door timer counts live and the watchdog marks the node STALE / OFFLINE when it goes silent.\n// Outputs: 1 = banner, 2 = door row, 3 = events (-> Event Log)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s1') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 1 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 1 OFFLINE: no message for ${age} s` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 1 back online' });\n    context.set('health', health);\n}\n\nconst RED = ['#7f1d1d', '#ef4444'], ORANGE = ['#7c2d12', '#f97316'], AMBER = ['#78350f', '#f59e0b'],\n      BLUE = ['#1e3a8a', '#60a5fa'], GREEN = ['#064e3b', '#10b981'], GREY = ['#1e293b', '#334155'];\nconst banner = (c, title, sub) => ({ bg: c[0], bd: c[1], title, sub });\n\nconst doorSec = s.door === 'OPEN' && s.doorOpenedAt ? Math.max(0, Math.floor((now - s.doorOpenedAt) / 1000)) : 0;\nconst doorTxt = s.door === 'OPEN' ? `Door OPEN ${fmt(doorSec)}` : 'Door closed';\nconst t = Number.isFinite(s.temp) ? `${s.temp.toFixed(2)} °C` : '-- °C';\n\nlet b, doorRow;\nif (health === 'WAITING') {\n    b = banner(GREY, 'Waiting for Node 1...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`);\n    doorRow = 'WAITING';\n} else if (health === 'OFFLINE') {\n    b = banner(RED, 'NODE 1 OFFLINE',\n        `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · last data ${s.lastSeen ? clock(s.lastSeen) : 'never'}`);\n    doorRow = 'UNKNOWN (offline)';\n} else {\n    if (s.alarm === 'BREACH') b = banner(RED, 'SECURITY BREACH ACTIVE', `Buzzer + Red LED locked ON · seq #${s.seq}`);\n    else if (s.temp < cfg.tempLowC) b = banner(BLUE, `FREEZE RISK: BELOW ${cfg.tempLowC} °C`, `${t} · vaccines may be damaged · ${doorTxt}`);\n    else if (s.alarm === 'TEMP') b = banner(ORANGE, 'OVER-TEMPERATURE ALARM', `${t} above ${cfg.tempHighC} °C for ${cfg.tempAlarmS} s+ · ${doorTxt}`);\n    else if (s.temp > cfg.tempHighC) b = banner(AMBER, `WARNING: ABOVE ${cfg.tempHighC} °C`, `${t} · alarm after ${cfg.tempAlarmS} s · ${doorTxt}`);\n    else if (s.alarm === 'DOOR') b = banner(ORANGE, `DOOR ALARM (${fmt(doorSec)})`, `Close vaccine fridge door · buzzer sounding · ${t}`);\n    else if (s.door === 'OPEN') b = banner(AMBER, `DOOR OPEN (${fmt(doorSec)})`, `Alarm at ${fmt(cfg.doorAlarmS)} · ${t}`);\n    else b = banner(GREEN, `COLD-CHAIN SAFE (${cfg.tempLowC}–${cfg.tempHighC} °C)`, `${t} · Door closed`);\n\n    b.sub += ` · ${clock(s.lastSeen)}`;\n    if (health === 'STALE') {\n        b.title = `STALE DATA · ${b.title}`;\n        b.sub = `No message for ${age} s · ${b.sub}`;\n        b.bd = '#eab308';\n    }\n    doorRow = s.door === 'OPEN' ? `OPEN (${fmt(doorSec)})` : 'CLOSED';\n}\nif (cfg.bench) b.sub += ' · BENCH TIMING';\n\n// Only send what changed, so the 1 s tick does not flood the dashboard.\nconst out = [null, null, events.length ? { events } : null];\nconst bKey = JSON.stringify(b);\nif (bKey !== context.get('lastBanner')) { context.set('lastBanner', bKey); out[0] = { payload: b }; }\nif (doorRow !== context.get('lastDoor')) { context.set('lastDoor', doorRow); out[1] = { payload: doorRow }; }\nreturn out;\n",
+    "outputs": 3,
+    "initialize": "",
+    "x": 720,
+    "y": 140,
+    "wires": [
+      [
+        "ui-fridge-banner"
+      ],
+      [
+        "ui-door-status"
+      ],
+      [
+        "fn-event-log"
+      ]
+    ]
+  },
+  {
+    "id": "fn-render2",
+    "type": "function",
+    "z": "tab-flow-main",
+    "noerr": 0,
+    "finalize": "",
+    "libs": [],
+    "name": "Render Power + Cut Timer + Watchdog",
+    "func": "// Renders the Node 2 banner + heartbeat row from flow 's2'. Runs on every update and on the 1 s tick:\n// live power-cut timer, live \"seconds since last message\", and STALE / OFFLINE watchdog.\n// Outputs: 1 = banner, 2 = heartbeat row, 3 = events (-> Event Log)\nconst cfg = flow.get('cfg');\nconst s = flow.get('s2') || {};\nconst now = Date.now();\nconst fmt = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;\nconst clock = t => new Date(t).toLocaleTimeString();\n\nif (!context.get('since')) context.set('since', now);\nconst age = Math.floor((now - (s.lastSeen || context.get('since'))) / 1000);\nconst health = s.lwtOffline || age >= cfg.offlineS ? 'OFFLINE'\n    : !s.lastSeen ? 'WAITING'\n    : age >= cfg.staleS ? 'STALE' : 'ONLINE';\n\nconst events = [];\nconst prevHealth = context.get('health');\nif (health !== prevHealth) {\n    if (health === 'STALE') events.push({ sev: 'WARN', src: 'watchdog', text: `Node 2 telemetry STALE: no message for ${age} s` });\n    if (health === 'OFFLINE' && !s.lwtOffline) events.push({ sev: 'CRITICAL', src: 'watchdog', text: `Node 2 OFFLINE: no message for ${age} s (SR-14)` });\n    if (health === 'ONLINE' && (prevHealth === 'STALE' || prevHealth === 'OFFLINE')) events.push({ sev: 'INFO', src: 'watchdog', text: 'Node 2 back online' });\n    context.set('health', health);\n}\n\nconst banner = (c, title, sub) => ({ bg: c[0], bd: c[1], title, sub });\nlet b, hb;\nif (health === 'WAITING') {\n    b = banner(['#1e293b', '#334155'], 'Waiting for Node 2...', `No telemetry yet · watchdog trips at ${cfg.offlineS} s`);\n    hb = 'WAITING';\n} else if (health === 'OFFLINE') {\n    b = banner(['#7f1d1d', '#ef4444'], 'NODE 2 OFFLINE (SR-14 ALERT)',\n        `${s.lwtOffline ? 'LWT received' : `Silent for ${fmt(age)}`} · power monitoring lost`);\n    hb = `OFFLINE · last seq #${s.seq ?? '-'} at ${s.lastSeen ? clock(s.lastSeen) : 'never'}`;\n} else {\n    b = s.mainsOn\n        ? banner(['#064e3b', '#10b981'], 'MAINS POWER ON (230 V OK)', `seq #${s.seq} · Node 2 healthy`)\n        : banner(['#7f1d1d', '#ef4444'], `POWER CUT DETECTED (${fmt(Math.max(0, Math.floor((now - s.cutAt) / 1000)))})`,\n            'Backup battery active · Buzzer sounding');\n    if (health === 'STALE') {\n        b.title = `STALE DATA · ${b.title}`;\n        b.sub = `No message for ${age} s · ${b.sub}`;\n        b.bd = '#eab308';\n    }\n    hb = `seq #${s.seq} · ${age} s ago`;\n}\n\nconst out = [null, null, events.length ? { events } : null];\nconst bKey = JSON.stringify(b);\nif (bKey !== context.get('lastBanner')) { context.set('lastBanner', bKey); out[0] = { payload: b }; }\nif (hb !== context.get('lastHb')) { context.set('lastHb', hb); out[1] = { payload: hb }; }\nreturn out;\n",
+    "outputs": 3,
+    "initialize": "",
+    "x": 720,
+    "y": 340,
+    "wires": [
+      [
+        "ui-power-banner"
+      ],
+      [
+        "ui-node2-heartbeat"
+      ],
+      [
+        "fn-event-log"
+      ]
+    ]
+  },
+  {
+    "id": "fn-event-log",
+    "type": "function",
+    "z": "tab-flow-main",
+    "noerr": 0,
+    "finalize": "",
+    "libs": [],
+    "name": "Event Log",
+    "func": "// Single owner of the SOC security event log. Input: msg.events = [{sev, src, text}] or msg.event.\nconst COLORS = { CRITICAL: '#dc2626', WARN: '#d97706', INFO: '#0284c7' };\nconst incoming = msg.events || (msg.event ? [msg.event] : []);\nif (!incoming.length) return null;\n\nconst logs = flow.get('secLogs') || [];\nconst time = new Date().toLocaleTimeString();\nfor (const e of incoming) {\n    logs.unshift({ time, sev: e.sev, src: e.src, text: e.text, color: COLORS[e.sev] || '#64748b' });\n}\nlogs.splice(12);\nflow.set('secLogs', logs);\nreturn { payload: logs };\n",
+    "outputs": 1,
+    "initialize": "",
+    "x": 720,
+    "y": 530,
+    "wires": [
+      [
+        "ui-soc-log-tpl"
+      ]
+    ]
+  },
+  {
+    "id": "inject-tick",
+    "type": "inject",
+    "z": "tab-flow-main",
+    "name": "1 s tick",
+    "props": [
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "1",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "1",
+    "topic": "tick",
+    "x": 400,
+    "y": 240,
+    "wires": [
+      [
+        "fn-render1",
+        "fn-render2"
+      ]
+    ]
   }
 ]
