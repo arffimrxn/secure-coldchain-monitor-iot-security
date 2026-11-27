@@ -86,7 +86,8 @@ Events recorded by the dashboard (read back from the Event Log):
 | L4 | Both ESP32s powered off | Positive (R1 watchdog) | Both nodes flagged OFFLINE, banners red, overview links broken | ✅ 17:41:55, both `OFFLINE` |
 | L5 | Broker holds retained telemetry from 26 Nov (`91b_`) | Negative / before-after (R1) | Replayed message ignored, not shown as live; WARN logged | ✅ `Ignored RETAINED telemetry (seq=28)` and `(seq=3)` at 17:09:51 |
 | L6 | Export CSV with filter = WARN (no WARN events) | Negative | Header-only file | ✅ `time_local,severity,source,event` only |
-| L7 | Export CSV, all severities | Positive | Dated rows | ✅ e.g. `2026-11-27 17:41:55,CRITICAL,watchdog,Node 2 OFFLINE…` (exported before the `rule` column was added; re-export for `91f_`) |
+| L7 | Export CSV, all severities | Positive | Dated rows | ✅ e.g. `2026-11-27 17:41:55,CRITICAL,watchdog,Node 2 OFFLINE…` (exported before the `rule` column was added) |
+| L8 | Fridge temperature Export CSV after the test | Positive | 1 sample/min with date, temp, door, alarm, seq | ✅ `2026-11-27 18:11:21,5,CLOSED,NONE,9001` (`91f_`) |
 
 ### 3.2 Logic tests (Node.js harness, real function code from `dashboard.json`)
 
@@ -128,9 +129,9 @@ The function nodes were run with a simulated clock and messages; all assertions 
 | `91b_retained_stale_telemetry.png` | `mosquitto_sub --retained-only` showing 26 Nov telemetry still retained on the broker | ✅ Added |
 | `91c_retained_cleared.png` | Retained messages cleared (`-r -n`), no live traffic while sensors were off | ✅ Added |
 | `91d_rule_trigger_commands.png` | R2 and R3 trigger commands run on the Pi | ✅ Added |
-| **`91_soc_2layers_3alerts.png`** | **SOC tab: feed with R1/R2/R3 chips + rule summary after the live test** (`M10` main evidence) | ⬜ Take screenshot |
-| `91e_dashboard_coldchain_after.png` | Redesigned Smart Fridge Monitor (System Overview, temperature card, 24 h KPIs) | ⬜ Take screenshot — ideally with sensors online |
-| `91f_soc_events.csv` | SOC **Export CSV** after the live test (timestamps + rule column) | ⬜ Export and save here |
+| **`91_soc_2layers_3alerts.png`** | **SOC tab after the live test: R1/R2/R3 chips in the feed; rule summary R1 = 3, R2 = 4, R3 = 1; 8 critical / 1 warning / 1 info in 24 h** (`M10` main evidence) | ✅ Added |
+| `91e_dashboard_coldchain_after.png` | Redesigned Smart Fridge Monitor after the test: System Overview, temperature card ("last 5.0 °C at 6:11:23 PM"), trend chart, 24 h KPIs (min/max/avg 5.0°, 0 min out of range) | ✅ Added (sensors offline) |
+| `91f_fridge_temperature_export.csv` | Fridge **Export CSV**: one sample from the R3 test message (`2026-11-27 18:11:21, 5, CLOSED, NONE, 9001`) — test data, not a real fridge reading | ✅ Added |
 
 ![Before: Stage 8 dashboard showing stale data](91a_dashboard_before.png)
 
@@ -140,10 +141,9 @@ The function nodes were run with a simulated clock and messages; all assertions 
 
 ![R2 and R3 trigger commands](91d_rule_trigger_commands.png)
 
-<!-- Uncomment after adding the screenshots:
 ![SOC: 2 layers, 3 rules](91_soc_2layers_3alerts.png)
+
 ![Smart Fridge Monitor after redesign](91e_dashboard_coldchain_after.png)
--->
 
 ---
 
@@ -163,6 +163,6 @@ The function nodes were run with a simulated clock and messages; all assertions 
 - [x] **≥ 3 alert rules:** R1 device integrity, R2 gateway auth/ACL/SSH, R3 statistical anomaly
 - [x] **≥ 1 statistical rule:** R3 message-flood (sliding window) + temperature z-score
 - [x] **All fire < 60 s:** R2 same second, R3 ≈ 2 s, R1 watchdog 15 s / 30 s (live test 27 Nov 2026)
-- [ ] Main screenshot `91_soc_2layers_3alerts.png` added
+- [x] Main screenshot `91_soc_2layers_3alerts.png` added
 
 **Next:** Person 1 — `logshipper.py` (`90_`) and revocation drill (`M11`, `92_`); Person 2 — Stage 9 Task 9.6 (dashboard on `8883`).
